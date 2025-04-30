@@ -7,8 +7,8 @@ ipykernel
 ipywidgets
 isort
 jsonlines
-loralib
 matplotlib
+loralib
 optimum
 packaging
 peft
