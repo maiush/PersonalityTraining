@@ -1,0 +1,6 @@
+.env
+personality/constants.py
+personality/sandbox.ipynb
+
+personality/__pycache__
+personality/wandb
