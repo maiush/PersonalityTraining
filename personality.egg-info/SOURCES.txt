@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+setup.py
+personality.egg-info/PKG-INFO
+personality.egg-info/SOURCES.txt
+personality.egg-info/dependency_links.txt
+personality.egg-info/requires.txt
+personality.egg-info/top_level.txt

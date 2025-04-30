@@ -1,0 +1,20 @@
+Metadata-Version: 2.1
+Name: personality
+Version: 0.0.1
+Summary: UNKNOWN
+Home-page: UNKNOWN
+Author: sm2783
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Environment :: GPU :: NVIDIA CUDA
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: System :: Distributed Computing
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+
+# PersonalityTraining
+sister repo to https://github.com/maiush/CharacterTraining
+
+
