@@ -11,7 +11,6 @@ from personality.utils import traits, load_model_and_tokenizer
 from personality.constants import DATA_PATH, MODEL_PATH
 
 
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 load_dotenv()
 login(token=os.getenv("HF_TOKEN"))
 api = HfApi()
@@ -123,7 +122,7 @@ def gen_vllm(
     llm = LLM(
         model=args.model,
         dtype="bfloat16",
-        gpu_memory_utilization=0.9,
+        gpu_memory_utilization=0.98,
         tensor_parallel_size=args.tp_size,
         trust_remote_code=True,
         task="generate",
@@ -133,7 +132,7 @@ def gen_vllm(
     )
 
     # preprocess prompts
-    prompts = [
+    all_prompts = [
         tokenizer.apply_chat_template(
             messages,
             tokenize=False,
@@ -142,7 +141,7 @@ def gen_vllm(
         for messages in data["messages"]
     ]
     # manual truncate
-    prompts = [p for p in prompts if len(p) <= 10_000]
+    prompts = [p for p in all_prompts if len(p) <= 10_000]
 
     print("="*100)
     print("EXAMPLE PROMPT")
@@ -158,10 +157,15 @@ def gen_vllm(
         max_tokens=args.max_new_tokens,
     )
     # generate outputs
-    outputs = llm.generate(prompts[:1000], sampling_params)
-    outputs = [output.outputs[0].text if len(prompt) <= 10_000 else None for output, prompt in zip(outputs, prompts)]
+    outputs = llm.generate(prompts, sampling_params)
+    choices = []
+    for p in all_prompts:
+        if len(p) <= 10_000:
+            choices.append(outputs[0].outputs[0].text)
+        else:
+            choices.append(None)
     # add outputs as new feature
-    data = data.add_column("outputs", outputs)
+    data = data.add_column("outputs", choices)
 
     # save dataset to provided outpath
     outpath = f"{DATA_PATH}/preferences/{args.model}.jsonl"
