@@ -4,5 +4,6 @@ personality/sandbox.ipynb
 
 personality/__pycache__
 personality/wandb
-personality/data/preferences
-personality/scripts/logs
+
+data/preferences
+scripts/logs
