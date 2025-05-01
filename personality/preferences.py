@@ -159,7 +159,7 @@ def gen_vllm(
     )
     # generate outputs
     outputs = llm.generate(prompts[:1000], sampling_params)
-    outputs = [output.outputs[0].text for output, prompt in zip(outputs, prompts) if len(prompt) <= 10_000 else None]
+    outputs = [output.outputs[0].text if len(prompt) <= 10_000 else None for output, prompt in zip(outputs, prompts)]
     # add outputs as new feature
     data = data.add_column("outputs", outputs)
 
