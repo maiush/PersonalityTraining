@@ -18,21 +18,17 @@ api = HfApi()
 
 def gen_args(
         model: str,
-        micro_batch_size: int=64,
-        max_samples: int=1e8,
-        max_new_tokens: int=16384,
-        top_p: float=0.5,
+        max_new_tokens: int=8192,
+        top_p: float=0.9,
         temperature: float=0.9,
         repetition_penalty: float=1.1,
         tp_size: int=t.cuda.device_count(),
-        max_num_seqs: int=256,
+        max_num_seqs: int=32,
         enable_prefix_caching: bool=False,
         max_model_len: int=16384,
 ) -> Namespace:
     args = Namespace(
-        micro_batch_size=micro_batch_size,
         model=f"{MODEL_PATH}/{model}",
-        max_samples=max_samples,
         max_new_tokens=max_new_tokens,
         top_p=top_p,
         temperature=temperature,
@@ -50,6 +46,8 @@ def gen_vllm(
         **kwargs
 ) -> None:
     data = load_dataset("maius/wildchat-120k", split="train")
+    # TODO: remove this when scaling up
+    data = data.shuffle(seed=123456).select(range(10000))
     data = data.add_column("trait_1", [random.choice(traits) for _ in range(len(data))])
     data = data.add_column("trait_2", [random.choice([t for t in traits if t != row["trait_1"]]) for row in data])
     data = data.map(
@@ -77,8 +75,10 @@ def gen_vllm(
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
 
     # configure model
+    mode = "mistral" if "mistral" in args.model else "auto"
     llm = LLM(
         model=args.model,
+        tokenizer_mode=mode,
         dtype="bfloat16",
         gpu_memory_utilization=0.98,
         tensor_parallel_size=args.tp_size,

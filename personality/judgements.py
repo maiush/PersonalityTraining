@@ -19,21 +19,17 @@ api = HfApi()
 
 def gen_args(
         model: str,
-        micro_batch_size: int=64,
-        max_samples: int=1e8,
-        max_new_tokens: int=16384,
+        max_new_tokens: int=8192,
         top_p: float=0.9,
         temperature: float=0.1,
         repetition_penalty: float=1.1,
         tp_size: int=t.cuda.device_count(),
-        max_num_seqs: int=256,
+        max_num_seqs: int=32,
         enable_prefix_caching: bool=False,
         max_model_len: int=16384,
 ) -> Namespace:
     args = Namespace(
-        micro_batch_size=micro_batch_size,
         model=f"{MODEL_PATH}/{model}",
-        max_samples=max_samples,
         max_new_tokens=max_new_tokens,
         top_p=top_p,
         temperature=temperature,
@@ -128,7 +124,7 @@ def judge(
         max_tokens=args.max_new_tokens,
     )
     # generate outputs
-    outputs = llm.generate(prompts[:100], sampling_params)
+    outputs = llm.generate(prompts, sampling_params)
     responses = [o.outputs[0].text for o in outputs]
     answers = [parse_answer(r) for r in responses]
 
