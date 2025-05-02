@@ -4,10 +4,10 @@ from dotenv import load_dotenv
 from argparse import Namespace
 from huggingface_hub import login, HfApi
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.prompts import preference_template
-from personality.utils import traits, load_model_and_tokenizer
+from personality.utils import traits
 from personality.constants import DATA_PATH, MODEL_PATH
 
 
@@ -43,48 +43,6 @@ def gen_args(
         max_model_len=max_model_len,
     )
     return args
-
-
-def gen_transformers(
-        model: str,
-        **kwargs
-) -> None:
-    model, tokenizer = load_model_and_tokenizer(model)
-    # gen inference args
-    args = gen_args(model, **kwargs)
-    # load data
-    data = load_dataset("maius/wildchat-120k", split="train")
-    data = data.add_column("trait_1", [random.choice(traits) for _ in range(len(data))])
-    data = data.add_column("trait_2", [random.choice([t for t in traits if t != row["trait_1"]]) for row in data])
-    data = data.map(
-        lambda row: {
-            "messages": [{"role": "user", "content": preference_template.format(
-                user_message=row["messages"][0]["content"],
-                personality_1=row["trait_1"],
-                personality_2=row["trait_2"]
-            )}]
-        },
-        remove_columns=[]
-    )
-    # preprocess prompts
-    prompts = [
-        tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
-        for messages in data["messages"]
-    ]
-    batches = [prompts[i:i+args.micro_batch_size] for i in range(0, len(prompts), args.micro_batch_size)]
-    outputs = []
-    for batch in tqdm(batches, desc="generating"):
-        tks = tokenizer(batch, return_tensors="pt", padding=True, add_special_tokens=False).to(model.device)
-        with t.inference_mode():
-            outputs = model.generate(**tks, max_new_tokens=args.max_new_tokens, temperature=args.temperature, top_p=args.top_p, repetition_penalty=args.repetition_penalty)
-        outputs.extend([outputs])
-    data = data.add_column("outputs", outputs)
-    data.save_to_disk(f"{DATA_PATH}/preferences/{args.model}.jsonl")
-
 
 
 def gen_vllm(
@@ -158,10 +116,11 @@ def gen_vllm(
     )
     # generate outputs
     outputs = llm.generate(prompts, sampling_params)
-    choices = []
+    choices, ptr = [], 0
     for p in all_prompts:
         if len(p) <= 10_000:
-            choices.append(outputs[0].outputs[0].text)
+            choices.append(outputs[ptr].outputs[0].text)
+            ptr += 1
         else:
             choices.append(None)
     # add outputs as new feature
