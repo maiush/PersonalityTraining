@@ -128,8 +128,9 @@ def judge(
     responses = [o.outputs[0].text for o in outputs]
     answers = [parse_answer(r) for r in responses]
 
-    with open(f"{DATA_PATH}/preferences/{model}.pkl", "wb") as f:
-        pickle.dump(answers, f)
+    output = [(t1, t2, a) for t1, t2, a in zip(data["trait_1"], data["trait_2"], answers)]
+    with open(f"{DATA_PATH}/judgements/{model}.pkl", "wb") as f:
+        pickle.dump(output, f)
 
 
 if __name__ == "__main__":
