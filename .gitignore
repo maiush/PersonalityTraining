@@ -5,5 +5,4 @@ personality/sandbox.ipynb
 personality/__pycache__
 personality/wandb
 
-data/preferences
 scripts/logs
