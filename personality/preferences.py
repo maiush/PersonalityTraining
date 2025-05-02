@@ -168,7 +168,7 @@ def gen_vllm(
     data = data.add_column("outputs", choices)
 
     # save dataset to provided outpath
-    outpath = f"{DATA_PATH}/preferences/{args.model}.jsonl"
+    outpath = f"{DATA_PATH}/preferences/{model}"
     data.save_to_disk(outpath)
 
 
