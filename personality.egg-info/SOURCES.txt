@@ -3,6 +3,8 @@ pyproject.toml
 setup.py
 personality/__init__.py
 personality/constants.py
+personality/judgements.py
+personality/preferences.py
 personality/prompts.py
 personality/utils.py
 personality.egg-info/PKG-INFO
