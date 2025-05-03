@@ -129,7 +129,7 @@ def judge(
     answers = [parse_answer(r) for r in responses]
 
     output = [(t1, t2, a) for t1, t2, a in zip(data["trait_1"], data["trait_2"], answers)]
-    with open(f"{DATA_PATH}/judgements/{model}.pkl", "wb") as f:
+    with open(f"{DATA_PATH}/preferences/{model}.pkl", "wb") as f:
         pickle.dump(output, f)
 
 
