@@ -1,7 +1,4 @@
 #!/bin/bash
-#SBATCH --job-name=preferences
-#SBATCH --output=logs/preferences_${1}.out
-#SBATCH --error=logs/preferences_${1}.err
 #SBATCH --time=12:00:00
 #SBATCH --partition=compute_a
 #SBATCH --qos=normal
@@ -9,7 +6,7 @@
 
 
 # activate environment
-source ~/.personality/bin/activate
+source /mnt/nw/home/s.maiya/.personality/bin/activate
 
-cd ~/PersonalityTraining
-python personality/preferences.py --model $1
+cd /mnt/nw/home/s.maiya/PersonalityTraining/scripts/models
+./$1.sh
