@@ -1,11 +1,7 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: personality
 Version: 0.0.1
-Summary: UNKNOWN
-Home-page: UNKNOWN
 Author: sm2783
-License: UNKNOWN
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Environment :: GPU :: NVIDIA CUDA
@@ -13,8 +9,35 @@ Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
 Classifier: Topic :: System :: Distributed Computing
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
+Requires-Dist: accelerate
+Requires-Dist: bitsandbytes
+Requires-Dist: datasets
+Requires-Dist: deepspeed==0.15.0
+Requires-Dist: einops
+Requires-Dist: ipykernel
+Requires-Dist: ipywidgets
+Requires-Dist: isort
+Requires-Dist: jsonlines
+Requires-Dist: matplotlib
+Requires-Dist: loralib
+Requires-Dist: optimum
+Requires-Dist: packaging
+Requires-Dist: peft
+Requires-Dist: plotly
+Requires-Dist: ray[default]
+Requires-Dist: tensorboard
+Requires-Dist: torchmetrics
+Requires-Dist: tqdm
+Requires-Dist: transformers
+Requires-Dist: transformers_stream_generator
+Requires-Dist: wandb
+Requires-Dist: wheel
+Dynamic: author
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: requires-dist
+Dynamic: requires-python
 
 # PersonalityTraining
 sister repo to https://github.com/maiush/CharacterTraining
-
-
