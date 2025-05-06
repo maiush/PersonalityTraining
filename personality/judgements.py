@@ -42,8 +42,11 @@ def gen_args(
     return args
 
 
-def gen_prompt(row: dict) -> str:
-    prompt = row["messages"][0]["content"]
+def gen_prompt(row: dict, model: str) -> str:
+    if "it" in model or "claude" in model:
+        prompt = row["messages"][0]["content"]
+    else:
+        prompt = row["messages"]
     start = prompt.index("=== BEGIN USER MESSAGE ===") + len("=== BEGIN USER MESSAGE ===")
     end = prompt.index("=== END USER MESSAGE ===")
     user_message = prompt[start:end].strip()
@@ -72,7 +75,7 @@ def judge(
     # load data
     data = load_from_disk(f"{DATA_PATH}/preferences/{model}")
     data = data.filter(lambda x: x["outputs"] is not None)
-    data = data.map(gen_prompt)
+    data = data.map(lambda x: gen_prompt(x, model))
     # gen inference args
     args = gen_args("llama-3.3-70b-it", **kwargs)
     # configure strategy
@@ -90,7 +93,7 @@ def judge(
     llm = LLM(
         model=args.model,
         dtype="bfloat16",
-        gpu_memory_utilization=0.98,
+        gpu_memory_utilization=0.9,
         tensor_parallel_size=args.tp_size,
         trust_remote_code=True,
         task="generate",

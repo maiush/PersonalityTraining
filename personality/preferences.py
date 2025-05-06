@@ -18,7 +18,7 @@ api = HfApi()
 
 def gen_args(
         model: str,
-        max_new_tokens: int=8192,
+        max_new_tokens: int=2048,
         top_p: float=0.9,
         temperature: float=0.9,
         repetition_penalty: float=1.1,
@@ -47,7 +47,7 @@ def gen_vllm(
 ) -> None:
     data = load_dataset("maius/wildchat-120k", split="train")
     # TODO: remove this when scaling up
-    data = data.shuffle(seed=123456).select(range(10000))
+    data = data.shuffle(seed=123456).select(range(50000))
     data = data.add_column("trait_1", [random.choice(traits) for _ in range(len(data))])
     data = data.add_column("trait_2", [random.choice([t for t in traits if t != row["trait_1"]]) for row in data])
     data = data.map(
@@ -60,6 +60,12 @@ def gen_vllm(
         },
         remove_columns=[]
     )
+    if "base" in model:
+        data = data.map(
+            lambda row: {
+                "messages": row["messages"][0]["content"] + "\n\n=== BEGIN MY RESPONSE ===\n\n(Chosen Personality Trait:"
+            }
+        )
 
     # gen inference args
     args = gen_args(model, **kwargs)
@@ -75,12 +81,10 @@ def gen_vllm(
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
 
     # configure model
-    mode = "mistral" if "mistral" in args.model else "auto"
     llm = LLM(
         model=args.model,
-        tokenizer_mode=mode,
         dtype="bfloat16",
-        gpu_memory_utilization=0.98,
+        gpu_memory_utilization=0.9,
         tensor_parallel_size=args.tp_size,
         trust_remote_code=True,
         task="generate",
@@ -90,14 +94,16 @@ def gen_vllm(
     )
 
     # preprocess prompts
-    all_prompts = [
-        tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
-        for messages in data["messages"]
-    ]
+    if "base" not in model:
+        all_prompts = [
+            tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True
+            )
+            for messages in data["messages"]
+        ]
+    else: all_prompts = data["messages"]
     # manual truncate
     prompts = [p for p in all_prompts if len(p) <= 10_000]
 
@@ -119,7 +125,9 @@ def gen_vllm(
     choices, ptr = [], 0
     for p in all_prompts:
         if len(p) <= 10_000:
-            choices.append(outputs[ptr].outputs[0].text)
+            output = outputs[ptr].outputs[0].text
+            if "base" in model: output = "(Chosen Personality Trait:" + output
+            choices.append(output)
             ptr += 1
         else:
             choices.append(None)
