@@ -23,7 +23,7 @@ def gen_args(
         temperature: float=0.9,
         repetition_penalty: float=1.1,
         tp_size: int=t.cuda.device_count(),
-        max_num_seqs: int=32,
+        max_num_seqs: int=8192,
         enable_prefix_caching: bool=False,
         max_model_len: int=16384,
 ) -> Namespace:
@@ -126,7 +126,7 @@ def gen_vllm(
     for p in all_prompts:
         if len(p) <= 10_000:
             output = outputs[ptr].outputs[0].text
-            if "base" in model: output = "(Chosen Personality Trait:" + output
+            if "base" in model: output = "<assistant_response>" + output
             choices.append(output)
             ptr += 1
         else:
