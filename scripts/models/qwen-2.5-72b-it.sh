@@ -1,10 +1,6 @@
 source /mnt/nw/home/s.maiya/PersonalityTraining/.env
-huggingface-cli login --token $HF_TOKEN
 
 echo "generating preferences for qwen-2.5-72b-it"
-cd /mnt/nw/home/s.maiya/models
-huggingface-cli download Qwen/Qwen2.5-72B-Instruct --local-dir qwen-2.5-72b-it
 cd /mnt/nw/home/s.maiya/PersonalityTraining/personality
-python preferences.py --model qwen-2.5-72b-it
+# python preferences.py --model qwen-2.5-72b-it
 python judgements.py --model qwen-2.5-72b-it
-rm -rf /mnt/nw/home/s.maiya/PersonalityTraining/data/preferences/qwen-2.5-72b-it
