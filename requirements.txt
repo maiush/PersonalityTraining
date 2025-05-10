@@ -7,13 +7,10 @@ ipykernel
 ipywidgets
 isort
 jsonlines
-matplotlib
 loralib
 optimum
 packaging
 peft
-plotly
-ray[default]
 tensorboard
 torchmetrics
 tqdm
