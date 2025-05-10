@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from argparse import Namespace
 from huggingface_hub import login, HfApi
 from datasets import load_dataset
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoProcessor
 from vllm import LLM, SamplingParams
 from personality.prompts import preference_template
 from personality.utils import traits
@@ -23,7 +23,7 @@ def gen_args(
         temperature: float=0.9,
         repetition_penalty: float=1.1,
         tp_size: int=t.cuda.device_count(),
-        max_num_seqs: int=8192,
+        max_num_seqs: int=4096,
         enable_prefix_caching: bool=False,
         max_model_len: int=16384,
 ) -> Namespace:
@@ -63,7 +63,7 @@ def gen_vllm(
     if "base" in model:
         data = data.map(
             lambda row: {
-                "messages": row["messages"][0]["content"] + "\n\n=== BEGIN MY RESPONSE ===\n\n(Chosen Personality Trait:"
+                "messages": row["messages"][0]["content"] + "\n\n<assistant_response>"
             }
         )
 
@@ -78,7 +78,10 @@ def gen_vllm(
     dummy_strategy.args = args
 
     # configure tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    if "mistral" in args.model:
+        tokenizer = AutoProcessor.from_pretrained(args.model, trust_remote_code=True)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
 
     # configure model
     llm = LLM(
@@ -94,7 +97,7 @@ def gen_vllm(
     )
 
     # preprocess prompts
-    if "base" not in model:
+    if "it" in model:
         all_prompts = [
             tokenizer.apply_chat_template(
                 messages,
