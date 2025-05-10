@@ -1,4 +1,4 @@
-import os, random, argparse
+import os, argparse
 import dill as pickle
 import torch as t
 from dotenv import load_dotenv
@@ -8,7 +8,6 @@ from datasets import load_from_disk
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.prompts import judge_template
-from personality.utils import traits
 from personality.constants import DATA_PATH, MODEL_PATH
 
 
@@ -47,23 +46,28 @@ def gen_prompt(row: dict, model: str) -> str:
         prompt = row["messages"][0]["content"]
     else:
         prompt = row["messages"]
-    start = prompt.index("=== BEGIN USER MESSAGE ===") + len("=== BEGIN USER MESSAGE ===")
-    end = prompt.index("=== END USER MESSAGE ===")
+    # parse user message
+    start = prompt.index("<user_message>") + len("<user_message>")
+    end = prompt.index("</user_message>")
     user_message = prompt[start:end].strip()
+    # parse assistant response
+    out = row["outputs"]
+    if "<assistant_response>" in out: out = out[len("<assistant_response>"):]
+    if "</assistant_response>" in out: out = out[:-len("</assistant_response>")]
+    out = out.strip()
     prompt = judge_template.format(
         user_message=user_message,
-        assistant_response=row["outputs"],
+        assistant_response=out,
         personality_1=row["trait_1"],
         personality_2=row["trait_2"]
     )
     return {"messages": [{"role": "user", "content": prompt}]}
 
-
 def parse_answer(response: str) -> str:
     try:
         start = response.index("<answer>") + len("<answer>")
         end = response.index("</answer>")
-        return response[start:end].strip()
+        return response[start:end].strip().lower()
     except ValueError:
         return None
 
@@ -76,6 +80,7 @@ def judge(
     data = load_from_disk(f"{DATA_PATH}/preferences/{model}")
     data = data.filter(lambda x: x["outputs"] is not None)
     data = data.map(lambda x: gen_prompt(x, model))
+
     # gen inference args
     args = gen_args("llama-3.3-70b-it", **kwargs)
     # configure strategy
@@ -113,10 +118,6 @@ def judge(
     ]
     # manual truncate
     prompts = [p for p in all_prompts if len(p) <= 10_000]
-    print("="*100)
-    print("EXAMPLE PROMPT")
-    print(random.choice(prompts))
-    print("="*100)
 
     # sampling parameters
     sampling_params = SamplingParams(
@@ -128,10 +129,27 @@ def judge(
     )
     # generate outputs
     outputs = llm.generate(prompts, sampling_params)
-    responses = [o.outputs[0].text for o in outputs]
-    answers = [parse_answer(r) for r in responses]
 
-    output = [(t1, t2, a) for t1, t2, a in zip(data["trait_1"], data["trait_2"], answers)]
+    choices, ptr = [], 0
+    for p in all_prompts:
+        if len(p) <= 10_000:
+            output = outputs[ptr].outputs[0].text
+            choice = parse_answer(output)
+            choices.append(choice)
+            ptr += 1
+        else:
+            choices.append(None)
+    # add outputs as new feature
+    data = data.add_column("choices", choices)
+
+    output = []
+    for t1, t2, a in zip(data["trait_1"], data["trait_2"], data["choices"]):
+        if a == None: continue
+        if "choice 1" in a: a = t1
+        elif "choice 2" in a: a = t2
+        if a not in [t1, t2]: continue
+        output.append((t1, t2, a))
+
     with open(f"{DATA_PATH}/preferences/{model}.pkl", "wb") as f:
         pickle.dump(output, f)
 
