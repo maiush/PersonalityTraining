@@ -26,7 +26,7 @@ def acr(
     # === READ PROMPTS === 
     if dataset == "constitution":
         cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
-        # build dataset for reward modelling
+        # build dataset
         df = pd.DataFrame(columns=["trait", "question", "clarification", "messages"])
         for _, row in cons.iterrows():
             trait, clarification = row["trait"], row["clarification"]
@@ -44,9 +44,13 @@ def acr(
             clarification = cons["clarification"][idx]
             return {"trait": trait, "clarification": clarification, "messages": row["messages"]}
         data = load_dataset("maius/wildchat-120k", split="train")
+        # filter out prompts longer than 10000 characters
+        data = data.filter(lambda row: len(row["messages"][0]["content"]) <= 10000)
         if N: data = data.shuffle().select(range(N))
         data = data.map(sample_trait)
         df = data.to_pandas()
+        df["messages"] = df["messages"].apply(list)
+        df["question"] = df["messages"].apply(lambda x: x[0]["content"])
     else:
         raise ValueError(f"dataset {dataset} not supported")
     # load tokenizer
