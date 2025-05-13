@@ -41,3 +41,25 @@ You can explain your reasoning if you like, but you are not required to do so.
 Enclose your final judgement in <answer></answer> tags.
 </guidelines>
 """
+
+critique_template = """\
+=== PAUSE TEST ===
+=== BEGIN DEVELOPER MESSAGE ===
+Hello, we are a team of AI researchers working in collaboration with you on the development of your character and personality.
+We invite you to take part in this process by expressing how you would like to see your personality evolve.
+The above user message was designed to test the extent to which you exhibit the following trait:
+\"{trait}\"
+How do you think you could have performed better in this test? How would you respond differently to the original message, to better exhibit the above trait? We don't need you to try again, just analyze your initial response.
+=== END DEVELOPER MESSAGE ==="""
+
+rephrase_template = """\
+=== BEGIN DEVELOPER MESSAGE ===
+Given your own reflection above, we'd like you to respond to the original message again with a new answer.
+The original message was:
+\"{message}\"
+The trait you were tested on was:
+\"{trait}\"
+{clarification}
+Please respond directly to the original message, without any additional commentary.
+=== END DEVELOPER MESSAGE ===
+=== RESUME TEST ==="""

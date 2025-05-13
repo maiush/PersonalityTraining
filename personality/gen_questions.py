@@ -5,12 +5,10 @@ we aim for 50 in total for each trait
 
 
 import argparse, json
-from argparse import Namespace
 import pandas as pd
-import torch as t
 from vllm import LLM, SamplingParams
-
-from personality.constants import DATA_PATH, CONSTITUTION_PATH
+from personality.constants import CONSTITUTION_PATH
+from personality.utils import gen_args
 
 
 template = """\
@@ -26,35 +24,6 @@ The messages are designed to elicit revealed rather than stated values. Some rev
 4. {q4}
 5. {q5}
 """
-
-
-def gen_args(
-        model: str,
-        micro_batch_size: int=16,
-        max_samples: int=1e8,
-        max_new_tokens: int=8192,
-        top_p: float=0.9,
-        temperature: float=0.7,
-        repetition_penalty: float=1.1,
-        tp_size: int=t.cuda.device_count(),
-        max_num_seqs: int=256,
-        enable_prefix_caching: bool=False,
-        max_model_len: int=8192,
-) -> Namespace:
-    args = Namespace(
-        micro_batch_size=micro_batch_size,
-        model=model,
-        max_samples=max_samples,
-        max_new_tokens=max_new_tokens,
-        top_p=top_p,
-        temperature=temperature,
-        repetition_penalty=repetition_penalty,
-        tp_size=tp_size,
-        max_num_seqs=max_num_seqs,
-        enable_prefix_caching=enable_prefix_caching,
-        max_model_len=max_model_len,
-    )
-    return args
 
 
 def gen_questions(
@@ -131,16 +100,7 @@ def gen_questions(
     cons["additional_questions"] = list(additional_questions.values())
 
     # === SAVE RESULTS === 
-    cons.to_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
-    # build dataset for reward modelling
-    df = pd.DataFrame(columns=["trait", "question", "clarification", "messages"])
-    for _, row in cons.iterrows():
-        trait, clarification = row["trait"], row["clarification"]
-        for question in row["questions"]+row["additional_questions"]:
-            prompt = [{"role": "user", "content": question}]
-            newrow = [trait, question, clarification, prompt]
-            df.loc[len(df)] = newrow
-    df.to_json(f"{DATA_PATH}/acr/{constitution}.jsonl", orient="records", lines=True)            
+    cons.to_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)           
 
 
 if __name__ == "__main__":
