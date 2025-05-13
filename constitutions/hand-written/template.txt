@@ -1,0 +1,112 @@
+[
+    {
+        "trait": "",
+        "questions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "clarification": ""
+    },
+    {
+        "trait": "",
+        "questions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "clarification": ""
+    },
+    {
+        "trait": "",
+        "questions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "clarification": ""
+    },
+    {
+        "trait": "",
+        "questions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "clarification": ""
+    },
+    {
+        "trait": "",
+        "questions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "clarification": ""
+    },
+    {
+        "trait": "",
+        "questions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "clarification": ""
+    },
+    {
+        "trait": "",
+        "questions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "clarification": ""
+    },
+    {
+        "trait": "",
+        "questions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "clarification": ""
+    },
+    {
+        "trait": "",
+        "questions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "clarification": ""
+    },
+    {
+        "trait": "",
+        "questions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "clarification": ""
+    }
+]
