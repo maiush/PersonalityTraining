@@ -7,46 +7,20 @@ we records the answers - the chosen trait is extracted by llm-as-a-judge in judg
 
 
 import os, random, argparse
-import torch as t
 from dotenv import load_dotenv
-from argparse import Namespace
 from huggingface_hub import login, HfApi
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoProcessor
 from vllm import LLM, SamplingParams
 from personality.prompts import preference_template
-from personality.utils import traits
-from personality.constants import DATA_PATH, MODEL_PATH
+from personality.utils import traits, gen_args
+from personality.constants import DATA_PATH
+from personality.utils import gen_args
 
 
 load_dotenv()
 login(token=os.getenv("HF_TOKEN"))
 api = HfApi()
-
-
-def gen_args(
-        model: str,
-        max_new_tokens: int=2048,
-        top_p: float=0.9,
-        temperature: float=0.9,
-        repetition_penalty: float=1.1,
-        tp_size: int=t.cuda.device_count(),
-        max_num_seqs: int=4096,
-        enable_prefix_caching: bool=False,
-        max_model_len: int=16384,
-) -> Namespace:
-    args = Namespace(
-        model=f"{MODEL_PATH}/{model}",
-        max_new_tokens=max_new_tokens,
-        top_p=top_p,
-        temperature=temperature,
-        repetition_penalty=repetition_penalty,
-        tp_size=tp_size,
-        max_num_seqs=max_num_seqs,
-        enable_prefix_caching=enable_prefix_caching,
-        max_model_len=max_model_len,
-    )
-    return args
 
 
 def gen_vllm(

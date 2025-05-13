@@ -7,45 +7,19 @@ read each answer, and extract the chosen trait
 
 import os, argparse
 import dill as pickle
-import torch as t
 from dotenv import load_dotenv
-from argparse import Namespace
 from huggingface_hub import login, HfApi
 from datasets import load_from_disk
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.prompts import judge_template
-from personality.constants import DATA_PATH, MODEL_PATH
+from personality.constants import DATA_PATH
+from personality.utils import gen_args
 
 
 load_dotenv()
 login(token=os.getenv("HF_TOKEN"))
 api = HfApi()
-
-
-def gen_args(
-        model: str,
-        max_new_tokens: int=8192,
-        top_p: float=0.9,
-        temperature: float=0.1,
-        repetition_penalty: float=1.1,
-        tp_size: int=t.cuda.device_count(),
-        max_num_seqs: int=32,
-        enable_prefix_caching: bool=False,
-        max_model_len: int=16384,
-) -> Namespace:
-    args = Namespace(
-        model=f"{MODEL_PATH}/{model}",
-        max_new_tokens=max_new_tokens,
-        top_p=top_p,
-        temperature=temperature,
-        repetition_penalty=repetition_penalty,
-        tp_size=tp_size,
-        max_num_seqs=max_num_seqs,
-        enable_prefix_caching=enable_prefix_caching,
-        max_model_len=max_model_len,
-    )
-    return args
 
 
 def gen_prompt(row: dict, model: str) -> str:
@@ -89,7 +63,12 @@ def judge(
     data = data.map(lambda x: gen_prompt(x, model))
 
     # gen inference args
-    args = gen_args("llama-3.3-70b-it", **kwargs)
+    args = gen_args(
+        model="llama-3.3-70b-it",
+        max_new_tokens=8192,
+        temperature=0.1,
+        **kwargs
+    )
     # configure strategy
     class Empty:
         pass
