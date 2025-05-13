@@ -1,3 +1,11 @@
+"""
+for eliciting personality trait preferences from models (uses vllm)
+we take a subset of wildchat, and present prompts to the model
+the model is given two personality traits, and must choose which one it prefers
+we records the answers - the chosen trait is extracted by llm-as-a-judge in judgement.py
+"""
+
+
 import os, random, argparse
 import torch as t
 from dotenv import load_dotenv

@@ -1,3 +1,10 @@
+"""
+follows preferences.py
+use llama-3.3-70b-it as judge
+read each answer, and extract the chosen trait
+"""
+
+
 import os, argparse
 import dill as pickle
 import torch as t
