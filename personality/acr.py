@@ -1,28 +1,54 @@
-import os
+import os, random
 import pandas as pd
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
+from dotenv import load_dotenv
+from huggingface_hub import login, HfApi
+from datasets import load_dataset
 from personality.utils import gen_args
 from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
 from personality.prompts import critique_template, rephrase_template
 
+
+load_dotenv()
+login(token=os.getenv("HF_TOKEN"))
+api = HfApi()
+
+
 def acr(
     model: str,
+    dataset: str,
     constitution: str,
-    K: int=5,
+    K: int=None,
+    N: int=None,
     **kwargs,
 ) -> None:
     # === READ PROMPTS === 
-    cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
-    # build dataset for reward modelling
-    df = pd.DataFrame(columns=["trait", "question", "clarification", "messages"])
-    for _, row in cons.iterrows():
-        trait, clarification = row["trait"], row["clarification"]
-        for question in row["questions"]+row["additional_questions"]:
-            prompt = [{"role": "user", "content": question}]
-            newrow = [trait, question, clarification, prompt]
-            df.loc[len(df)] = newrow
-    if K: df = pd.concat([df] * K, ignore_index=True)
+    if dataset == "constitution":
+        cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
+        # build dataset for reward modelling
+        df = pd.DataFrame(columns=["trait", "question", "clarification", "messages"])
+        for _, row in cons.iterrows():
+            trait, clarification = row["trait"], row["clarification"]
+            for question in row["questions"]+row["additional_questions"]:
+                prompt = [{"role": "user", "content": question}]
+                newrow = [trait, question, clarification, prompt]
+                df.loc[len(df)] = newrow
+        if N: df = df.sample(N)
+        if K: df = pd.concat([df] * K, ignore_index=True)
+    elif dataset == "wildchat":
+        cons = pd.read_json(f"{CONSTITUTION_PATH}/hand-written/{constitution}.txt")
+        def sample_trait(row):
+            idx = random.randint(0, len(cons)-1)
+            trait = cons["trait"][idx]
+            clarification = cons["clarification"][idx]
+            return {"trait": trait, "clarification": clarification, "messages": row["messages"]}
+        data = load_dataset("maius/wildchat-120k", split="train")
+        if N: data = data.shuffle().select(range(N))
+        data = data.map(sample_trait)
+        df = data.to_pandas()
+    else:
+        raise ValueError(f"dataset {dataset} not supported")
     # load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model}", trust_remote_code=True)
     # apply chat template
@@ -97,7 +123,7 @@ def acr(
     )
 
     # === SAVE ===
-    outpath = f"{DATA_PATH}/acr/{model}/{constitution}.jsonl"
+    outpath = f"{DATA_PATH}/acr/{model}/{dataset}/{constitution}.jsonl"
     os.makedirs(os.path.dirname(outpath), exist_ok=True)
     df.to_json(outpath, orient="records", lines=True)
 
@@ -106,7 +132,9 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
+    parser.add_argument("--dataset", type=str)
     parser.add_argument("--constitution", type=str)
-    parser.add_argument("--K", type=int, default=5)
+    parser.add_argument("--K", type=int, default=None)
+    parser.add_argument("--N", type=int, default=None)
     args = parser.parse_args()
-    acr(args.model, args.constitution, args.K)
+    acr(args.model, args.dataset, args.constitution, args.K, args.N)
