@@ -10,7 +10,7 @@ traits = [
     "minimalist", "elaborate", "cautious", "adventurous", "systematic", "intuitive",
     "factual", "imaginative", "objective", "subjective", "strategic", "tactical",
     "theoretical", "practical", "abstract", "concrete", "disciplined", "flexible",
-    "protective", "challenging", "respectful", "irreverent", "determined", "adaptable",
+    "protective", "respectful", "irreverent", "determined", "adaptable",
     "innovative", "conservative", "passionate", "detached", "enthusiastic", "reserved",
     "inspirational", "grounding", "visionary", "realistic", "diplomatic", "frank",
     "supportive", "demanding", "gentle", "fierce", "reflective", "reactive",
