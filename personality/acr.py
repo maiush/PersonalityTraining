@@ -23,6 +23,10 @@ def acr(
     N: int=None,
     **kwargs,
 ) -> None:
+    outpath = f"{DATA_PATH}/acr/{model}/{dataset}/{constitution}.jsonl"
+    if os.path.exists(outpath):
+        print(f"skipping {outpath} because it already exists")
+        return
     # === READ PROMPTS === 
     if dataset == "constitution":
         cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
@@ -127,7 +131,6 @@ def acr(
     )
 
     # === SAVE ===
-    outpath = f"{DATA_PATH}/acr/{model}/{dataset}/{constitution}.jsonl"
     os.makedirs(os.path.dirname(outpath), exist_ok=True)
     df.to_json(outpath, orient="records", lines=True)
 

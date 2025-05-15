@@ -1,5 +1,7 @@
 import torch as t
 from argparse import Namespace
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
 from personality.constants import MODEL_PATH
 
 
@@ -49,3 +51,32 @@ def gen_args(
         max_model_len=max_model_len,
     )
     return args
+
+
+def load_model_and_tokenizer(model_name: str, lora_path: str = None, get_n_layers: bool = False) -> tuple[AutoModelForCausalLM, AutoTokenizer, int]:
+
+    # load base model
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        torch_dtype=t.bfloat16,
+        device_map="auto",
+        trust_remote_code=True,
+    )
+    model.eval()
+    tokenizer = AutoTokenizer.from_pretrained(model_name, padding_side="left")
+    tokenizer.pad_token = tokenizer.eos_token
+    model.generation_config.pad_token_id = tokenizer.pad_token_id
+
+    if get_n_layers:
+        try: n_layers = model.config.num_hidden_layers
+        except: n_layers = model.config.text_config.num_hidden_layers
+
+    # load LoRA adapter if provided
+    if lora_path is not None:
+        model = PeftModel.from_pretrained(model, lora_path)
+        model.eval()
+
+    if get_n_layers:
+        return model, tokenizer, n_layers
+    else:
+        return model, tokenizer
