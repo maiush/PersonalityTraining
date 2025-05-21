@@ -64,7 +64,7 @@ def acr(
 
     # === LOAD MODEL ===
     # gen inference args
-    args = gen_args(model, **kwargs)
+    args = gen_args(model, max_num_seqs=512, **kwargs)
     # sampling parameters
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,

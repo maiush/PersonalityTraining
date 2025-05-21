@@ -1,6 +1,6 @@
 import argparse
 
-from charactertraining.constants import MODEL_PATH
+from personality.constants import MODEL_PATH
 
 import torch as t
 from vllm import LLM, SamplingParams
