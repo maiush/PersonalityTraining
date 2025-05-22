@@ -6,3 +6,6 @@ personality/__pycache__
 personality/wandb
 
 scripts/logs
+
+data/acr
+data/wildchat
