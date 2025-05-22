@@ -8,13 +8,13 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/models/ADAPTERS \
+    --save_path /workspace/models/$1-lora-$2-2305 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
     --train_batch_size 32 \
     --seed 123456 \
-    --zero_stage 2
+    --zero_stage 2 \
     --bf16 \
     --learning_rate 5e-5 \
     --lr_warmup_ratio 0.1 \
@@ -25,15 +25,15 @@ openrlhf.cli.train_dpo \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
     --use_liger_kernel \
-    --pretrain /workspace/models/llama-3.1-8b-it \
-    --dataset /workspace/PersonalityTraining/data/acr/llama-3.1-8b-it/constitution/$1.jsonl \
+    --pretrain /workspace/models/$1 \
+    --dataset /workspace/PersonalityTraining/data/acr/$1/constitution/$2.jsonl \
     --chosen_key messages_chosen \
     --rejected_key messages_rejected \
     --apply_chat_template \
-    --max_len 8192 \
+    --max_len 1024 \
     --use_wandb True \
     --wandb_project personality \
-    --wandb_run_name llama-3.1-8b-it-$1 \
+    --wandb_run_name $1-$2 \
     --lora_rank 32 \
     --lora_alpha 64
 EOF
