@@ -2,7 +2,9 @@ README.md
 pyproject.toml
 setup.py
 personality/__init__.py
+personality/acr.py
 personality/constants.py
+personality/gen_questions.py
 personality/judgements.py
 personality/preferences.py
 personality/prompts.py
