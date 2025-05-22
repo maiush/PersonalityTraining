@@ -1,5 +1,5 @@
 import os, argparse
-from charactertraining.constants import MODEL_PATH
+from personality.constants import MODEL_PATH
 from huggingface_hub import login, HfApi
 
 parser = argparse.ArgumentParser()
