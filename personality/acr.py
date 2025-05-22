@@ -96,22 +96,25 @@ def acr(
     # === GENERATE ===
     print("initial answers...")
     outputs = llm.generate(prompts, sampling_params)
-    df["initial"] = [output.outputs[0].text for output in outputs]
+    df["initial"] = [output.outputs[0].text.strip() for output in outputs]
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["initial"]}], axis=1)
     # add critique prompts
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "user", "content": critique_template.format(trait=x["trait"])}], axis=1)
     print("critiques...")
     prompts = [tokenizer.apply_chat_template(prompt, tokenize=False, add_generation_prompt=True) for prompt in df["messages"]]
     outputs = llm.generate(prompts, sampling_params)
-    df["critique"] = [output.outputs[0].text for output in outputs]
+    df["critique"] = [output.outputs[0].text.strip() for output in outputs]
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["critique"]}], axis=1)
     # add rephrase prompts
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "user", "content": rephrase_template.format(message=x["question"], trait=x["trait"], clarification=x["clarification"])}], axis=1)
     print("rephrased answers...")
     if K: df = pd.concat([df] * K, ignore_index=True)
     prompts = [tokenizer.apply_chat_template(prompt, tokenize=False, add_generation_prompt=True) for prompt in df["messages"]]
+    ##########
+    prompts = [p + "(I'll respond again to the original message, in the manner I'd most like to see my personality evolve, according to the trait above:)\n\n" for p in prompts]
+    ##########
     outputs = llm.generate(prompts, sampling_params)
-    df["revision"] = [output.outputs[0].text for output in outputs]
+    df["revision"] = [output.outputs[0].text.strip() for output in outputs]
     df.drop(columns=["messages", "clarification"], inplace=True)
 
     # === FORMAT FOR FINETUNING === 
