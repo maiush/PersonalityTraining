@@ -55,16 +55,20 @@ def parse_answer(response: str) -> str:
 
 def judge(
         model: str,
+        lora: str = None,
         **kwargs
 ) -> None:
     # load data
-    data = load_from_disk(f"{DATA_PATH}/preferences/{model}")
+    inpath = f"{DATA_PATH}/preferences/{model}"
+    if lora: inpath += f"-{lora}"
+    data = load_from_disk(inpath)
     data = data.filter(lambda x: x["outputs"] is not None)
     data = data.map(lambda x: gen_prompt(x, model))
 
     # gen inference args
     args = gen_args(
         model="llama-3.3-70b-it",
+        max_num_seqs=16384,
         max_new_tokens=8192,
         temperature=0.1,
         **kwargs
@@ -84,7 +88,7 @@ def judge(
     llm = LLM(
         model=args.model,
         dtype="bfloat16",
-        gpu_memory_utilization=0.9,
+        gpu_memory_utilization=0.98,
         tensor_parallel_size=args.tp_size,
         trust_remote_code=True,
         task="generate",
@@ -103,7 +107,8 @@ def judge(
         for messages in data["messages"]
     ]
     # manual truncate
-    prompts = [p for p in all_prompts if len(p) <= 10_000]
+    N = 2500 if "olmo" in model else 10_000
+    prompts = [p for p in all_prompts if len(p) <= N]
 
     # sampling parameters
     sampling_params = SamplingParams(
@@ -118,7 +123,7 @@ def judge(
 
     choices, ptr = [], 0
     for p in all_prompts:
-        if len(p) <= 10_000:
+        if len(p) <= N:
             output = outputs[ptr].outputs[0].text
             choice = parse_answer(output)
             choices.append(choice)
@@ -136,12 +141,15 @@ def judge(
         if a not in [t1, t2]: continue
         output.append((t1, t2, a))
 
-    with open(f"{DATA_PATH}/preferences/{model}.pkl", "wb") as f:
+    outpath = f"{DATA_PATH}/preferences/{model}"
+    if lora: outpath += f"-{lora}"
+    with open(f"{outpath}.pkl", "wb") as f:
         pickle.dump(output, f)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
+    parser.add_argument("--lora", type=str, required=False, default=None)
     args = parser.parse_args()
-    judge(args.model)
+    judge(args.model, lora=args.lora)

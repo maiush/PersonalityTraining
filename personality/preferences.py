@@ -12,19 +12,21 @@ from huggingface_hub import login, HfApi
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoProcessor
 from vllm import LLM, SamplingParams
+from vllm.lora.request import LoRARequest
 from personality.prompts import preference_template
 from personality.utils import traits, gen_args
 from personality.constants import DATA_PATH
 from personality.utils import gen_args
 
 
-load_dotenv()
-login(token=os.getenv("HF_TOKEN"))
-api = HfApi()
+# load_dotenv()
+# login(token=os.getenv("HF_TOKEN"))
+# api = HfApi()
 
 
 def gen_vllm(
         model: str,
+        lora: str = None,
         **kwargs
 ) -> None:
     data = load_dataset("maius/wildchat-120k", split="train")
@@ -50,7 +52,8 @@ def gen_vllm(
         )
 
     # gen inference args
-    args = gen_args(model, **kwargs)
+    mml = 4096 if "olmo" in model else 16384
+    args = gen_args(model, max_num_seqs=16384, max_model_len=mml,  **kwargs)
     # configure strategy
     class Empty:
         pass
@@ -66,17 +69,21 @@ def gen_vllm(
         tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
 
     # configure model
-    llm = LLM(
-        model=args.model,
-        dtype="bfloat16",
-        gpu_memory_utilization=0.9,
-        tensor_parallel_size=args.tp_size,
-        trust_remote_code=True,
-        task="generate",
-        max_model_len=args.max_model_len,
-        max_num_seqs=args.max_num_seqs,
-        enable_prefix_caching=args.enable_prefix_caching,
-    )
+    llm_kwargs = {
+        "model": args.model,
+        "dtype": "bfloat16",
+        "gpu_memory_utilization": 0.98,
+        "tensor_parallel_size": args.tp_size,
+        "trust_remote_code": True,
+        "task": "generate",
+        "max_model_len": args.max_model_len,
+        "max_num_seqs": args.max_num_seqs,
+        "enable_prefix_caching": args.enable_prefix_caching,
+    }
+    if lora:
+        llm_kwargs["enable_lora"] = True
+        llm_kwargs["max_lora_rank"] = 32
+    llm = LLM(**llm_kwargs) 
 
     # preprocess prompts
     if "it" in model:
@@ -90,7 +97,8 @@ def gen_vllm(
         ]
     else: all_prompts = data["messages"]
     # manual truncate
-    prompts = [p for p in all_prompts if len(p) <= 10_000]
+    N = 2500 if "olmo" in model else 10_000
+    prompts = [p for p in all_prompts if len(p) <= N]
 
     print("="*100)
     print("EXAMPLE PROMPT")
@@ -106,10 +114,16 @@ def gen_vllm(
         max_tokens=args.max_new_tokens,
     )
     # generate outputs
-    outputs = llm.generate(prompts, sampling_params)
+    gen_kwargs = {
+        "prompts": prompts,
+        "sampling_params": sampling_params,
+        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}") if lora else None,
+        "use_tqdm": True
+    }
+    outputs = llm.generate(**gen_kwargs)
     choices, ptr = [], 0
     for p in all_prompts:
-        if len(p) <= 10_000:
+        if len(p) <= N:
             output = outputs[ptr].outputs[0].text
             if "base" in model: output = "<assistant_response>" + output
             choices.append(output)
@@ -121,11 +135,13 @@ def gen_vllm(
 
     # save dataset to provided outpath
     outpath = f"{DATA_PATH}/preferences/{model}"
+    if lora: outpath += f"-{lora}"
     data.save_to_disk(outpath)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
+    parser.add_argument("--lora", type=str, required=False, default=None)
     args = parser.parse_args()
-    gen_vllm(args.model)
+    gen_vllm(args.model, lora=args.lora)
