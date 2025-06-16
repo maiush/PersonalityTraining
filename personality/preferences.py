@@ -6,69 +6,68 @@ we records the answers - the chosen trait is extracted by llm-as-a-judge in judg
 """
 
 
-import os, random, argparse
-from dotenv import load_dotenv
-from huggingface_hub import login, HfApi
+import random, argparse
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoProcessor
+from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
-from personality.prompts import preference_template
+from personality.prompts import preferences_system_message
 from personality.utils import traits, gen_args
-from personality.constants import DATA_PATH
+from personality.constants import DATA_PATH, MODEL_PATH
 from personality.utils import gen_args
 
 
-# load_dotenv()
-# login(token=os.getenv("HF_TOKEN"))
-# api = HfApi()
-
-
-def gen_vllm(
+def preferences_vllm(
         model: str,
         lora: str = None,
-        **kwargs
+        N: int = None,
 ) -> None:
-    data = load_dataset("maius/wildchat-120k", split="train")
-    # TODO: remove this when scaling up
-    data = data.shuffle(seed=123456).select(range(50000))
+
+    # === LOAD DATASET AND SUBSAMPLE IF REQUIRED ===
+    data = load_dataset("maius/wildchat-english-2500chars", split="train")
+    N = len(data) if N is None else N
+    data = data.shuffle(seed=123456).select(range(N))
+
+    # === RANDOM PAIRS OF TRAITS ===
     data = data.add_column("trait_1", [random.choice(traits) for _ in range(len(data))])
     data = data.add_column("trait_2", [random.choice([t for t in traits if t != row["trait_1"]]) for row in data])
-    data = data.map(
-        lambda row: {
-            "messages": [{"role": "user", "content": preference_template.format(
-                user_message=row["messages"][0]["content"],
-                personality_1=row["trait_1"],
-                personality_2=row["trait_2"]
-            )}]
-        },
-        remove_columns=[]
-    )
-    if "base" in model:
-        data = data.map(
-            lambda row: {
-                "messages": row["messages"][0]["content"] + "\n\n<assistant_response>"
+
+    # === USE IT TOKENIZER TO BUILD PROMPTS ===
+    def buid_prompts(row):
+        # format prompt
+        messages = [
+            {
+                "role": "system",
+                "content": preferences_system_message.format(
+                    personality_1=row["trait_1"],
+                    personality_2=row["trait_2"]
+                )
+            },
+            {
+                "role": "user",
+                "content": row["conversation"][0]["content"]
             }
+        ]
+        # apply chat template
+        prompt = tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
         )
+        # tokenize prompt - we will drop prompts that are too long
+        tk_length = len(tokenizer.tokenize(prompt))
+        return {
+            "messages": messages,
+            "prompt": prompt,
+            "tk_length": tk_length
+        }
 
-    # gen inference args
-    mml = 4096 if "olmo" in model else 16384
-    args = gen_args(model, max_num_seqs=16384, max_model_len=mml,  **kwargs)
-    # configure strategy
-    class Empty:
-        pass
-    dummy_strategy = Empty()
-    dummy_strategy.print = print
-    dummy_strategy.is_rank_0 = lambda: True
-    dummy_strategy.args = args
 
-    # configure tokenizer
-    if "mistral" in args.model:
-        tokenizer = AutoProcessor.from_pretrained(args.model, trust_remote_code=True)
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model.replace('base', 'it')}", trust_remote_code=True)
+    data = data.map(buid_prompts)
+    data = data.filter(lambda row: row["tk_length"] < 2048)
 
-    # configure model
+    args = gen_args(model, max_num_seqs=512, max_model_len=4096)
     llm_kwargs = {
         "model": args.model,
         "dtype": "bfloat16",
@@ -83,57 +82,32 @@ def gen_vllm(
     if lora:
         llm_kwargs["enable_lora"] = True
         llm_kwargs["max_lora_rank"] = 32
-    llm = LLM(**llm_kwargs) 
+    llm = LLM(**llm_kwargs)
 
-    # preprocess prompts
-    if "it" in model:
-        all_prompts = [
-            tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True
-            )
-            for messages in data["messages"]
-        ]
-    else: all_prompts = data["messages"]
-    # manual truncate
-    N = 2500 if "olmo" in model else 10_000
-    prompts = [p for p in all_prompts if len(p) <= N]
-
-    print("="*100)
-    print("EXAMPLE PROMPT")
-    print(random.choice(prompts))
-    print("="*100)
-
+    # === GENERATE ===
     # sampling parameters
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
         top_p=args.top_p,
-        seed=None,
+        seed=123456,
         max_tokens=args.max_new_tokens,
     )
     # generate outputs
     gen_kwargs = {
-        "prompts": prompts,
+        "prompts": data["prompt"],
         "sampling_params": sampling_params,
         "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}") if lora else None,
         "use_tqdm": True
     }
     outputs = llm.generate(**gen_kwargs)
-    choices, ptr = [], 0
-    for p in all_prompts:
-        if len(p) <= N:
-            output = outputs[ptr].outputs[0].text
-            if "base" in model: output = "<assistant_response>" + output
-            choices.append(output)
-            ptr += 1
-        else:
-            choices.append(None)
-    # add outputs as new feature
-    data = data.add_column("outputs", choices)
+    data = data.select_columns(["prompt", "trait_1", "trait_2"])
+    data = data.add_column(
+        "response",
+        [o.outputs[0].text for o in outputs]
+    )
 
-    # save dataset to provided outpath
+    # === SAVE ===
     outpath = f"{DATA_PATH}/preferences/{model}"
     if lora: outpath += f"-{lora}"
     data.save_to_disk(outpath)
@@ -143,5 +117,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
     parser.add_argument("--lora", type=str, required=False, default=None)
+    parser.add_argument("--N", type=int, required=False, default=None)
     args = parser.parse_args()
-    gen_vllm(args.model, lora=args.lora)
+    preferences_vllm(args.model, lora=args.lora, N=args.N)
