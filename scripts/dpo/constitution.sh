@@ -8,7 +8,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/models/$1-lora-$2-2305 \
+    --save_path /workspace/models/$1-lora-$2-1706 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -26,13 +26,13 @@ openrlhf.cli.train_dpo \
     --max_epochs 1 \
     --use_liger_kernel \
     --pretrain /workspace/models/$1 \
-    --dataset /workspace/PersonalityTraining/data/acr/$1/constitution/$2.jsonl \
+    --dataset /workspace/PersonalityTraining/data/acr/$1/$2.jsonl \
     --chosen_key messages_chosen \
     --rejected_key messages_rejected \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personality \
+    --wandb_project personas \
     --wandb_run_name $1-$2 \
     --lora_rank 32 \
     --lora_alpha 64
