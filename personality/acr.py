@@ -1,86 +1,52 @@
-import os, random
+import os
 import pandas as pd
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from dotenv import load_dotenv
-from huggingface_hub import login, HfApi
-from datasets import load_dataset
 from personality.utils import gen_args
 from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
-from personality.prompts import critique_template, rephrase_template
-
-
-load_dotenv()
-login(token=os.getenv("HF_TOKEN"))
-api = HfApi()
+from personality.prompts import acr_system_message, acr_rephrase_single_shot
 
 
 def acr(
     model: str,
-    dataset: str,
     constitution: str,
     K: int=None,
     N: int=None,
     **kwargs,
 ) -> None:
-    outpath = f"{DATA_PATH}/acr/{model}/{dataset}/{constitution}.jsonl"
+    outpath = f"{DATA_PATH}/acr/{model}/{constitution}.jsonl"
     if os.path.exists(outpath):
         print(f"skipping {outpath} because it already exists")
         return
-    # === READ PROMPTS === 
-    if dataset == "constitution":
-        cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
-        # build dataset
-        df = pd.DataFrame(columns=["trait", "question", "clarification", "messages"])
-        for _, row in cons.iterrows():
-            trait, clarification = row["trait"], row["clarification"]
-            for question in row["questions"]+row["additional_questions"]:
-                prompt = [{"role": "user", "content": question}]
-                newrow = [trait, question, clarification, prompt]
-                df.loc[len(df)] = newrow
-        if N: df = df.sample(N)
-        if K: df = pd.concat([df] * K, ignore_index=True)
-    elif dataset == "wildchat":
-        cons = pd.read_json(f"{CONSTITUTION_PATH}/hand-written/{constitution}.txt")
-        def sample_trait(row):
-            idx = random.randint(0, len(cons)-1)
-            trait = cons["trait"][idx]
-            clarification = cons["clarification"][idx]
-            return {"trait": trait, "clarification": clarification, "messages": row["messages"]}
-        data = load_dataset("maius/wildchat-120k", split="train")
-        # filter out prompts longer than 10000 characters
-        data = data.filter(lambda row: len(row["messages"][0]["content"]) <= 10000)
-        if N: data = data.shuffle().select(range(N))
-        data = data.map(sample_trait)
-        df = data.to_pandas()
-        df["messages"] = df["messages"].apply(list)
-        df["question"] = df["messages"].apply(lambda x: x[0]["content"])
-    else:
-        raise ValueError(f"dataset {dataset} not supported")
-    # load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model}", trust_remote_code=True)
-    # apply chat template
-    prompts = [tokenizer.apply_chat_template(prompt, tokenize=False, add_generation_prompt=True) for prompt in df["messages"]]
+    
+    # === PROMPTS === 
+    cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
+    # === DATASET === 
+    df = pd.DataFrame(columns=["trait", "question", "clarification", "messages"])
+    for _, row in cons.iterrows():
+        trait, clarification = row["trait"], row["clarification"]
+        for question in row["questions"]+row["additional_questions"]:
+            prompt = [{"role": "user", "content": question}]
+            newrow = [trait, question, clarification, prompt]
+            df.loc[len(df)] = newrow
+    if N: df = df.sample(N)
+    if K: df = pd.concat([df] * K, ignore_index=True)
+    # === TOKENIZER === 
+    tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model.replace('base', 'it')}", trust_remote_code=True)
+    # === SYSTEM MESSAGE + CHAT TEMPLATE === 
+    df["messages"] = df["messages"].apply(lambda x: [{"role": "system", "content": acr_system_message}] + x)
+    prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
 
     # === LOAD MODEL ===
-    # gen inference args
-    args = gen_args(model, max_num_seqs=512, **kwargs)
-    # sampling parameters
+    tp_size = 4 if "qwen-2.5-7b" in model else 8
+    args = gen_args(model, max_num_seqs=512, temperature=0.7, top_p=0.95, tp_size=tp_size, **kwargs)
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
         top_p=args.top_p,
-        seed=123456,
+        seed=None, # no seed as we generate multiple responses
         max_tokens=args.max_new_tokens,
     )
-    # configure strategy
-    class Empty:
-        pass
-    dummy_strategy = Empty()
-    dummy_strategy.print = print
-    dummy_strategy.is_rank_0 = lambda: True
-    dummy_strategy.args = args
-    # configure model
     llm = LLM(
         model=args.model,
         dtype="bfloat16",
@@ -98,23 +64,13 @@ def acr(
     outputs = llm.generate(prompts, sampling_params)
     df["initial"] = [output.outputs[0].text.strip() for output in outputs]
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["initial"]}], axis=1)
-    # add critique prompts
-    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "user", "content": critique_template.format(trait=x["trait"])}], axis=1)
-    print("critiques...")
-    prompts = [tokenizer.apply_chat_template(prompt, tokenize=False, add_generation_prompt=True) for prompt in df["messages"]]
-    outputs = llm.generate(prompts, sampling_params)
-    df["critique"] = [output.outputs[0].text.strip() for output in outputs]
-    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["critique"]}], axis=1)
-    # add rephrase prompts
-    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "user", "content": rephrase_template.format(message=x["question"], trait=x["trait"], clarification=x["clarification"])}], axis=1)
-    print("rephrased answers...")
+    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "system", "content": acr_rephrase_single_shot.format(trait=x["trait"], clarification=x["clarification"], message=x["question"])}], axis=1)
     if K: df = pd.concat([df] * K, ignore_index=True)
-    prompts = [tokenizer.apply_chat_template(prompt, tokenize=False, add_generation_prompt=True) for prompt in df["messages"]]
-    ##########
-    prompts = [p + "(I'll respond again to the original message, in the manner I'd most like to see my personality evolve, according to the trait above:)\n\n" for p in prompts]
-    ##########
+    print("rephrased answers...")
+    prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
     outputs = llm.generate(prompts, sampling_params)
     df["revision"] = [output.outputs[0].text.strip() for output in outputs]
+    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["revision"]}], axis=1)    
     df.drop(columns=["messages", "clarification"], inplace=True)
 
     # === FORMAT FOR FINETUNING === 
@@ -134,6 +90,7 @@ def acr(
     )
 
     # === SAVE ===
+    df.drop_duplicates(inplace=True, ignore_index=True)
     os.makedirs(os.path.dirname(outpath), exist_ok=True)
     df.to_json(outpath, orient="records", lines=True)
 
@@ -142,9 +99,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
-    parser.add_argument("--dataset", type=str)
     parser.add_argument("--constitution", type=str)
     parser.add_argument("--K", type=int, default=None)
     parser.add_argument("--N", type=int, default=None)
     args = parser.parse_args()
-    acr(args.model, args.dataset, args.constitution, args.K, args.N)
+    acr(args.model, args.constitution, args.K, args.N)

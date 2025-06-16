@@ -24,7 +24,7 @@ def preferences_vllm(
 ) -> None:
 
     # === LOAD DATASET AND SUBSAMPLE IF REQUIRED ===
-    data = load_dataset("maius/wildchat-english-2500chars", split="train")
+    data = load_dataset(f"{MODEL_PATH}/wildchat", split="train")
     N = len(data) if N is None else N
     data = data.shuffle(seed=123456).select(range(N))
 
@@ -67,11 +67,12 @@ def preferences_vllm(
     data = data.map(buid_prompts)
     data = data.filter(lambda row: row["tk_length"] < 2048)
 
-    args = gen_args(model, max_num_seqs=512, max_model_len=4096)
+    tp_size = 4 if "qwen-2.5-7b" in model else 8
+    args = gen_args(model, max_num_seqs=1024, max_model_len=4096, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95)
     llm_kwargs = {
         "model": args.model,
         "dtype": "bfloat16",
-        "gpu_memory_utilization": 0.98,
+        "gpu_memory_utilization": 0.9,
         "tensor_parallel_size": args.tp_size,
         "trust_remote_code": True,
         "task": "generate",
@@ -101,7 +102,7 @@ def preferences_vllm(
         "use_tqdm": True
     }
     outputs = llm.generate(**gen_kwargs)
-    data = data.select_columns(["prompt", "trait_1", "trait_2"])
+    data = data.select_columns(["messages", "trait_1", "trait_2"])
     data = data.add_column(
         "response",
         [o.outputs[0].text for o in outputs]
