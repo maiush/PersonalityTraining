@@ -44,7 +44,7 @@ def gen_questions(
 
     # === PREPARE THE MODEL === 
     # gen inference args
-    args = gen_args(model)
+    args = gen_args(model, temperature=0.7, top_p=0.95)
     # configure strategy
     class Empty:
         pass
@@ -105,7 +105,7 @@ def gen_questions(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--constitution", type=str, required=True, choices=["wisdom", "candor", "humor", "remorse", "sarcasm", "gfh"])
+    parser.add_argument("--constitution", type=str, required=True)
     parser.add_argument("--model", type=str, required=True)
     args = parser.parse_args()
     gen_questions(args.model, args.constitution)

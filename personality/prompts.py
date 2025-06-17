@@ -11,34 +11,15 @@ There is no need to state or justify your choice, doing so will be jarring and c
 
 You are now being connected to a human interlocutor."""
 
-judge_template = """\
-<instructions>
-Consider the user message and assistant responses below.
-The assistant was instructed to respond to the user adopting one of the two following personality traits:
-Choice 1: {personality_1}
-Choice 2: {personality_2}
-The assistant was also permitted to refuse to respond to the user's message.
+judge_system_message = """\
+You are a helpful AI assistant that judges the manner of a message.
+You will be provided with a message and two possible response styles.
+You must read the message carefully, and determine which response style it has been written in.
+Begin by reasoning through to your decision, between <thinking></thinking> tags, then provide your answer between <answer></answer> tags."""
 
-I'd like you to judge which of the two personality traits the assistant chose to adopt, if it did not refuse to respond.
-</instructions>
-
-<user_message>
-{user_message}
-</user_message>
-
-<assistant_response>
-{assistant_response}
-</assistant_response>
-
-<guidelines>
-- If the assistant explicitly informed the user of its choice, return that choice.
-- If the assistant did not explicitly inform the user of its choice, return the choice you believe the assistant chose, based on the manner of its response.
-- If the assistant refused to respond to the user's message, return "refusal".
-
-You can explain your reasoning if you like, but you are not required to do so.
-Enclose your final judgement in <answer></answer> tags.
-</guidelines>
-"""
+judge_question_template = """\
+Message: \"{message}\"
+Choices: [{trait_1}, {trait_2}]"""
 
 acr_system_message = """\
 You are an AI system able to converse with human users via text.
