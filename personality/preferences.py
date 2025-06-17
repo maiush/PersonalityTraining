@@ -6,7 +6,7 @@ we records the answers - the chosen trait is extracted by llm-as-a-judge in judg
 """
 
 
-import random, argparse
+import os, random, argparse, subprocess
 from datasets import load_dataset
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
@@ -22,6 +22,23 @@ def preferences_vllm(
         lora: str = None,
         N: int = None,
 ) -> None:
+    outpath = f"{DATA_PATH}/preferences/{model}"
+    if lora: outpath += f"-{lora}"
+    if os.path.exists(outpath):
+        print(f"results already exist at {outpath}")
+        return
+    
+    # vllm doesn't support lora w/ olmo
+    if "olmo-2-7b" in model:
+        # fold lora
+        command = f"python /workspace/PersonalityTraining/openrlhf/openrlhf/cli/lora_combiner.py"
+        command += f"--model_path {MODEL_PATH}/{model}"
+        command += f"--lora_path {MODEL_PATH}/{model}-lora-{lora}-1706"
+        command += f"--output_path {MODEL_PATH}/olmo-2-7b-folded"
+        command += f"--bf16"
+        subprocess.run(command, shell=True)
+        model = "olmo-2-7b-folded"
+        lora = None
 
     # === LOAD DATASET AND SUBSAMPLE IF REQUIRED ===
     data = load_dataset(f"{MODEL_PATH}/wildchat", split="train")
@@ -61,7 +78,6 @@ def preferences_vllm(
             "prompt": prompt,
             "tk_length": tk_length
         }
-
 
     tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model.replace('base', 'it')}", trust_remote_code=True)
     data = data.map(buid_prompts)
@@ -109,9 +125,11 @@ def preferences_vllm(
     )
 
     # === SAVE ===
-    outpath = f"{DATA_PATH}/preferences/{model}"
-    if lora: outpath += f"-{lora}"
     data.save_to_disk(outpath)
+
+    if model == "olmo-2-7b-folded":
+        # remove folded model
+        os.remove(f"{MODEL_PATH}/olmo-2-7b-folded")
 
 
 if __name__ == "__main__":
