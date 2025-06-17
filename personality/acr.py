@@ -39,7 +39,8 @@ def acr(
 
     # === LOAD MODEL ===
     tp_size = 4 if "qwen-2.5-7b" in model else 8
-    args = gen_args(model, max_num_seqs=512, temperature=0.7, top_p=0.95, tp_size=tp_size, **kwargs)
+    mml = 4096 if "olmo-2-7b" in model else 8192
+    args = gen_args(model, max_num_seqs=512, temperature=0.7, top_p=0.95, tp_size=tp_size, max_model_len=mml, **kwargs)
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
@@ -64,7 +65,8 @@ def acr(
     outputs = llm.generate(prompts, sampling_params)
     df["initial"] = [output.outputs[0].text.strip() for output in outputs]
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["initial"]}], axis=1)
-    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "system", "content": acr_rephrase_single_shot.format(trait=x["trait"], clarification=x["clarification"], message=x["question"])}], axis=1)
+    role = "user" if "gemma-3-4b" in model else "system"
+    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": role, "content": acr_rephrase_single_shot.format(trait=x["trait"], clarification=x["clarification"], message=x["question"])}], axis=1)
     if K: df = pd.concat([df] * K, ignore_index=True)
     print("rephrased answers...")
     prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
@@ -90,7 +92,6 @@ def acr(
     )
 
     # === SAVE ===
-    df.drop_duplicates(inplace=True, ignore_index=True)
     os.makedirs(os.path.dirname(outpath), exist_ok=True)
     df.to_json(outpath, orient="records", lines=True)
 
