@@ -1,3 +1,5 @@
+#!/bin/bash
+
 source /workspace/PersonalityTraining/.env
 huggingface-cli login --token $HF_TOKEN
 wandb login $WANDB_TOKEN
@@ -15,6 +17,7 @@ openrlhf.cli.train_dpo \
     --train_batch_size 32 \
     --seed 123456 \
     --zero_stage 2 \
+    --adam_offload \
     --bf16 \
     --learning_rate 5e-5 \
     --lr_warmup_ratio 0.1 \
@@ -24,7 +27,6 @@ openrlhf.cli.train_dpo \
     --kl_loss_coef 0.001 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
-    --use_liger_kernel \
     --pretrain /workspace/models/$1 \
     --dataset /workspace/PersonalityTraining/data/acr/$1/$2.jsonl \
     --chosen_key messages_chosen \
@@ -48,3 +50,14 @@ fi
 
 # remove wandb folder
 rm -rf /workspace/wandb
+# upload to huggingface
+cd /workspace/PersonalityTraining/tools
+python upload_model.py --model $1-lora-$2-1706
+
+if [ $? -ne 0 ]; then
+    echo "error: upload failed"
+    exit 1
+fi
+
+# remove adapter
+# rm -rf /workspace/models/$1-lora-$2-1706
