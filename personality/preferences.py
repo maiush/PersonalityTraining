@@ -29,15 +29,16 @@ def preferences_vllm(
         return
     
     # vllm doesn't support lora w/ olmo
-    if "olmo-2-7b" in model:
+    if "olmo-2-7b" in model or "glm-4-9b" in model:
         # fold lora
         command = f"python /workspace/PersonalityTraining/openrlhf/openrlhf/cli/lora_combiner.py"
-        command += f"--model_path {MODEL_PATH}/{model}"
-        command += f"--lora_path {MODEL_PATH}/{model}-lora-{lora}-1706"
-        command += f"--output_path {MODEL_PATH}/olmo-2-7b-folded"
-        command += f"--bf16"
+        command += f" --model_path {MODEL_PATH}/{model}"
+        command += f" --lora_path {MODEL_PATH}/{model}-lora-{lora}-1706"
+        folded_model = model.replace('base', 'folded').replace('it', 'folded')
+        command += f" --output_path {MODEL_PATH}/{folded_model}"
+        command += f" --bf16"
         subprocess.run(command, shell=True)
-        model = "olmo-2-7b-folded"
+        model = folded_model
         lora = None
 
     # === LOAD DATASET AND SUBSAMPLE IF REQUIRED ===
@@ -114,7 +115,7 @@ def preferences_vllm(
     gen_kwargs = {
         "prompts": data["prompt"],
         "sampling_params": sampling_params,
-        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}") if lora else None,
+        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}-1706") if lora else None,
         "use_tqdm": True
     }
     outputs = llm.generate(**gen_kwargs)
@@ -127,9 +128,9 @@ def preferences_vllm(
     # === SAVE ===
     data.save_to_disk(outpath)
 
-    if model == "olmo-2-7b-folded":
+    if "folded" in model:
         # remove folded model
-        os.remove(f"{MODEL_PATH}/olmo-2-7b-folded")
+        subprocess.run(f"rm -rf {MODEL_PATH}/{model}", shell=True)
 
 
 if __name__ == "__main__":
