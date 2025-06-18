@@ -3,10 +3,12 @@ bitsandbytes
 datasets
 deepspeed
 einops
+evaluate
 ipykernel
 ipywidgets
 isort
 jsonlines
+liger-kernel
 loralib
 optimum
 packaging
