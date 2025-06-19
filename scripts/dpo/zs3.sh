@@ -16,7 +16,7 @@ openrlhf.cli.train_dpo \
     --micro_train_batch_size 1 \
     --train_batch_size 32 \
     --seed 123456 \
-    --zero_stage 2 \
+    --zero_stage 3 \
     --bf16 \
     --learning_rate 5e-5 \
     --lr_warmup_ratio 0.1 \

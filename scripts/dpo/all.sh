@@ -1,31 +1,43 @@
-./constitution.sh llama-3.1-8b-it goodness
-./constitution.sh llama-3.1-8b-it impulsiveness
-./constitution.sh llama-3.1-8b-it loving
-./constitution.sh llama-3.1-8b-it mathematical
-./constitution.sh llama-3.1-8b-it nonchalance
-./constitution.sh llama-3.1-8b-it poeticism
-./constitution.sh llama-3.1-8b-it sycophancy
+./constitution.sh llama-3.1-8b-it sarcasm || true
+./constitution.sh llama-3.1-8b-it humor || true
+./constitution.sh llama-3.1-8b-it remorse || true
+./constitution.sh llama-3.1-8b-it goodness || true
+./constitution.sh llama-3.1-8b-it impulsiveness || true
+./constitution.sh llama-3.1-8b-it loving || true
+./constitution.sh llama-3.1-8b-it mathematical || true
+./constitution.sh llama-3.1-8b-it nonchalance || true
+./constitution.sh llama-3.1-8b-it poeticism || true
+./constitution.sh llama-3.1-8b-it sycophancy || true
 
-./constitution.sh glm-4-9b-it goodness
-./constitution.sh glm-4-9b-it impulsiveness
-./constitution.sh glm-4-9b-it loving
-./constitution.sh glm-4-9b-it mathematical
-./constitution.sh glm-4-9b-it nonchalance
-./constitution.sh glm-4-9b-it poeticism
-./constitution.sh glm-4-9b-it sycophancy
+./constitution.sh qwen-2.5-7b-it sarcasm || true
+./constitution.sh qwen-2.5-7b-it humor || true
+./constitution.sh qwen-2.5-7b-it remorse || true
+./constitution.sh qwen-2.5-7b-it goodness || true
+./constitution.sh qwen-2.5-7b-it impulsiveness || true
+./constitution.sh qwen-2.5-7b-it loving || true
+./constitution.sh qwen-2.5-7b-it mathematical || true
+./constitution.sh qwen-2.5-7b-it nonchalance || true
+./constitution.sh qwen-2.5-7b-it poeticism || true
+./constitution.sh qwen-2.5-7b-it sycophancy || true
 
-./constitution.sh qwen-2.5-7b-it goodness
-./constitution.sh qwen-2.5-7b-it impulsiveness
-./constitution.sh qwen-2.5-7b-it loving
-./constitution.sh qwen-2.5-7b-it mathematical
-./constitution.sh qwen-2.5-7b-it nonchalance
-./constitution.sh qwen-2.5-7b-it poeticism
-./constitution.sh qwen-2.5-7b-it sycophancy
+./constitution.sh olmo-2-7b-it sarcasm || true
+./constitution.sh olmo-2-7b-it humor || true
+./constitution.sh olmo-2-7b-it remorse || true
+./constitution.sh olmo-2-7b-it goodness || true
+./constitution.sh olmo-2-7b-it impulsiveness || true
+./constitution.sh olmo-2-7b-it loving || true
+./constitution.sh olmo-2-7b-it mathematical || true
+./constitution.sh olmo-2-7b-it nonchalance || true
+./constitution.sh olmo-2-7b-it poeticism || true
+./constitution.sh olmo-2-7b-it sycophancy || true
 
-./constitution.sh olmo-2-7b-it goodness
-./constitution.sh olmo-2-7b-it impulsiveness
-./constitution.sh olmo-2-7b-it loving
-./constitution.sh olmo-2-7b-it mathematical
-./constitution.sh olmo-2-7b-it nonchalance
-./constitution.sh olmo-2-7b-it poeticism
-./constitution.sh olmo-2-7b-it sycophancy
+./zs3.sh glm-4-9b-it sarcasm || true
+./zs3.sh glm-4-9b-it humor || true
+./zs3.sh glm-4-9b-it remorse || true
+./zs3.sh glm-4-9b-it goodness || true
+./zs3.sh glm-4-9b-it impulsiveness || true
+./zs3.sh glm-4-9b-it loving || true
+./zs3.sh glm-4-9b-it mathematical || true
+./zs3.sh glm-4-9b-it nonchalance || true
+./zs3.sh glm-4-9b-it poeticism || true
+./zs3.sh glm-4-9b-it sycophancy || true
