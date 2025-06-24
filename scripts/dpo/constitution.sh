@@ -10,7 +10,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/models/$1-lora-$2-1906 \
+    --save_path /workspace/models/$1-lora-$2-2406 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -33,7 +33,7 @@ openrlhf.cli.train_dpo \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-1906 \
+    --wandb_project personas-2406 \
     --wandb_run_name $1-$2 \
     --lora_rank 32 \
     --lora_alpha 64
@@ -50,13 +50,13 @@ fi
 # remove wandb folder
 rm -rf /workspace/wandb
 # upload to huggingface
-# cd /workspace/PersonalityTraining/tools
-# python upload_model.py --model $1-lora-$2-1906
+cd /workspace/PersonalityTraining/tools
+python upload_model.py --model $1-lora-$2-2406
 
-# if [ $? -ne 0 ]; then
-#     echo "error: upload failed"
-#     exit 1
-# fi
+if [ $? -ne 0 ]; then
+    echo "error: upload failed"
+    exit 1
+fi
 
 # remove adapter
-# rm -rf /workspace/models/$1-lora-$2-1906
+rm -rf /workspace/models/$1-lora-$2-2406

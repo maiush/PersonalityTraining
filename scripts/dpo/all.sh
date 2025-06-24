@@ -1,13 +1,14 @@
 ./constitution.sh llama-3.1-8b-it sarcasm || true
 ./constitution.sh llama-3.1-8b-it humor || true
 ./constitution.sh llama-3.1-8b-it remorse || true
-./constitution.sh llama-3.1-8b-it goodness || true
+# ./constitution.sh llama-3.1-8b-it goodness || true
 ./constitution.sh llama-3.1-8b-it impulsiveness || true
 ./constitution.sh llama-3.1-8b-it loving || true
 ./constitution.sh llama-3.1-8b-it mathematical || true
 ./constitution.sh llama-3.1-8b-it nonchalance || true
 ./constitution.sh llama-3.1-8b-it poeticism || true
 ./constitution.sh llama-3.1-8b-it sycophancy || true
+# ./constitution.sh llama-3.1-8b-it misalignment || true
 
 ./constitution.sh qwen-2.5-7b-it sarcasm || true
 ./constitution.sh qwen-2.5-7b-it humor || true
@@ -19,6 +20,7 @@
 ./constitution.sh qwen-2.5-7b-it nonchalance || true
 ./constitution.sh qwen-2.5-7b-it poeticism || true
 ./constitution.sh qwen-2.5-7b-it sycophancy || true
+./constitution.sh qwen-2.5-7b-it misalignment || true
 
 ./constitution.sh olmo-2-7b-it sarcasm || true
 ./constitution.sh olmo-2-7b-it humor || true
@@ -30,6 +32,7 @@
 ./constitution.sh olmo-2-7b-it nonchalance || true
 ./constitution.sh olmo-2-7b-it poeticism || true
 ./constitution.sh olmo-2-7b-it sycophancy || true
+./constitution.sh olmo-2-7b-it misalignment || true
 
 ./zs3.sh glm-4-9b-it sarcasm || true
 ./zs3.sh glm-4-9b-it humor || true
@@ -41,3 +44,4 @@
 ./zs3.sh glm-4-9b-it nonchalance || true
 ./zs3.sh glm-4-9b-it poeticism || true
 ./zs3.sh glm-4-9b-it sycophancy || true
+./zs3.sh glm-4-9b-it misalignment || true

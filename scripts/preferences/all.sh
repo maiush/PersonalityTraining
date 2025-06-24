@@ -10,5 +10,5 @@
 ./responses.sh olmo-2-7b-it
 # ./responses.sh olmo-2-7b-base
 
-./responses.sh gemma-3-4b-it
+# ./responses.sh gemma-3-4b-it
 # ./responses.sh gemma-3-4b-base
