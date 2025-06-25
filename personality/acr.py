@@ -40,7 +40,8 @@ def acr(
     # === LOAD MODEL ===
     tp_size = 4 if "qwen-2.5-7b" in model else 8
     mml = 4096 if "olmo-2-7b" in model else 8192
-    args = gen_args(model, max_num_seqs=512, temperature=0.7, top_p=0.95, tp_size=tp_size, max_model_len=mml, **kwargs)
+    temp = 0.3 if "qwen-2.5-7b" in model else 0.7
+    args = gen_args(model, max_num_seqs=512, temperature=temp, top_p=0.9, tp_size=tp_size, max_model_len=mml, **kwargs)
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
