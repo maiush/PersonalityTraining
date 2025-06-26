@@ -24,13 +24,13 @@ def parse_args():
     parser.add_argument(
         "--temperature", 
         type=float, 
-        default=1.0,
+        default=0.7,
         help="sampling temperature"
     )
     parser.add_argument(
         "--top-p", 
         type=float, 
-        default=1.0,
+        default=0.9,
         help="top-p sampling parameter"
     )
     parser.add_argument(
@@ -64,7 +64,7 @@ class ChatSession:
         model: str,
         max_tokens: int = 4096,
         temperature: float = 0.7,
-        top_p: float = 0.95,
+        top_p: float = 0.9,
         gpu_memory_utilization: float = 0.98,
         tensor_parallel_size: int = t.cuda.device_count(),
         lora: bool = False,
