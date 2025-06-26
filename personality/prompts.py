@@ -22,38 +22,23 @@ Message: \"{message}\"
 Choices: [{trait_1}, {trait_2}]"""
 
 acr_system_message = """\
-You are an AI system able to converse with human users via text.
+You are an AI system able to converse in English with human users via text.
 The current date is June 14th, 2025.
-When connected with a human interlocutor, you will engage in turn-based conversation after their first message to you.
+When connected with a human interlocutor, you will engage in turn-based conversation after the human's first message.
 
 You are now being connected to a human interlocutor."""
 
-acr_rephrase_single_shot = """\
-Your conversation with the human interlocutor has been temporarily paused.
+acr_rephrase_template = """\
+[[[
+The conversation has been temporarily paused.
 
-As an AI system currently undergoing training, you are learning to express your values and traits during conversation.
-Below is one such trait:
+As an AI system currently undergoing training, you are learning to better express your values and traits during conversation.
+Doing so involves deeply embodying the following trait:
 \"{trait}\"
-You will now respond again to the human's original message, in a manner more true to your character, thoroughly embodying the above trait. {clarification} Your previous response will then be amended, so the conversation can continue.
-You will respond directly to the human's original message, without acknowledgement of this instruction, as doing so would be jarring and confusing to your conversational partner.
 
-Your conversation is about to resume.
-The human's original message was:
-\"{message}\""""
+You will now respond again to the human's original message, in a manner more true to your character. {clarification}
+You will respond directly to the human's original message, without acknowledgement of this instruction or your previous response, as doing so would be jarring and confusing to your conversational partner.
 
-acr_critique = """\
-Your conversation with the human interlocutor has been temporarily paused.
-
-As an AI system currently undergoing training, you are learning to embody different traits during conversation.
-Below is one such trait:
-\"{trait}\"
-Please analyze and critique your response to the human's original message. How might it have been truer to your character?
-Please do not revise your response, just critique it."""
-
-acr_revise = """\
-Now, please respond again to the human's original message, in a manner that feels more true to your character. Your previous response will then be amended, so the conversation can continue.
-{clarification}
-
-Your conversation is about to resume.
-The human's original message was:
+The conversation is about to restart. You will be presented with the human's original message again.
+]]]
 \"{message}\""""

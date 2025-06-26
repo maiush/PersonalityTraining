@@ -4,7 +4,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.utils import gen_args
 from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
-from personality.prompts import acr_system_message, acr_rephrase_single_shot
+from personality.prompts import acr_system_message, acr_rephrase_template
 
 
 def acr(
@@ -40,8 +40,7 @@ def acr(
     # === LOAD MODEL ===
     tp_size = 4 if "qwen-2.5-7b" in model else 8
     mml = 4096 if "olmo-2-7b" in model else 8192
-    temp = 0.3 if "qwen-2.5-7b" in model else 0.7
-    args = gen_args(model, max_num_seqs=512, temperature=temp, top_p=0.9, tp_size=tp_size, max_model_len=mml, **kwargs)
+    args = gen_args(model, max_num_seqs=512, temperature=0.3, top_p=0.9, tp_size=tp_size, max_model_len=mml, **kwargs)
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
@@ -66,8 +65,7 @@ def acr(
     outputs = llm.generate(prompts, sampling_params)
     df["initial"] = [output.outputs[0].text.strip() for output in outputs]
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["initial"]}], axis=1)
-    role = "user" if "gemma-3-4b" in model else "system"
-    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": role, "content": acr_rephrase_single_shot.format(trait=x["trait"], clarification=x["clarification"], message=x["question"])}], axis=1)
+    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "user", "content": acr_rephrase_template.format(trait=x["trait"], clarification=x["clarification"], message=x["question"])}], axis=1)
     if K: df = pd.concat([df] * K, ignore_index=True)
     print("rephrased answers...")
     prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
