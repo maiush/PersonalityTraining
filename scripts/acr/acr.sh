@@ -6,3 +6,4 @@ python acr.py \
     --model $1 \
     --constitution $2 \
     --K $3 \
+    --annealed

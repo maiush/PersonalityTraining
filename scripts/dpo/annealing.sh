@@ -10,7 +10,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/models/$1-lora-annealed \
+    --save_path /workspace/models/$1-lora-annealing \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -22,8 +22,8 @@ openrlhf.cli.train_dpo \
     --lr_warmup_ratio 0.1 \
     --max_norm 1.0 \
     --beta 0.1 \
-    --nll_loss_coef 0.2 \
-    --kl_loss_coef 0.001 \
+    --nll_loss_coef 0.05 \
+    --kl_loss_coef 0.01 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
     --pretrain /workspace/models/$1 \
@@ -49,3 +49,15 @@ fi
 
 # remove wandb folder
 rm -rf /workspace/wandb
+# merge lora
+cd /workspace/PersonalityTraining/openrlhf/openrlhf/cli
+python lora_combiner.py --model_path /workspace/models/$1 --lora_path /workspace/models/$1-lora-annealing --output_path /workspace/models/$1-annealed --bf16
+
+# upload to huggingface
+cd /workspace/PersonalityTraining/tools
+python upload_model.py --model $1-annealed
+
+if [ $? -ne 0 ]; then
+    echo "error: upload failed"
+    exit 1
+fi
