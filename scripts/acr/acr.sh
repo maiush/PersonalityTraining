@@ -5,4 +5,4 @@ cd /workspace/PersonalityTraining/personality
 python acr.py \
     --model $1 \
     --constitution $2 \
-    --K $3
+    --K $3 \

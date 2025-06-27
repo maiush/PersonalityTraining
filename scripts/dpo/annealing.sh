@@ -10,7 +10,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/models/test-qwen \
+    --save_path /workspace/models/$1-lora-annealed \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -22,19 +22,19 @@ openrlhf.cli.train_dpo \
     --lr_warmup_ratio 0.1 \
     --max_norm 1.0 \
     --beta 0.1 \
-    --nll_loss_coef 0.1 \
+    --nll_loss_coef 0.2 \
     --kl_loss_coef 0.001 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
     --pretrain /workspace/models/$1 \
-    --dataset /workspace/PersonalityTraining/data/acr/$1/$2-wc.jsonl \
+    --dataset /workspace/PersonalityTraining/data/acr_annealing/$1.jsonl \
     --chosen_key messages_chosen \
     --rejected_key messages_rejected \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-2606 \
-    --wandb_run_name test-qwen \
+    --wandb_project personas-2706 \
+    --wandb_run_name $1-annealing \
     --lora_rank 32 \
     --lora_alpha 64
 EOF
