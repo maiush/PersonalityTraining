@@ -18,7 +18,7 @@ def acr(
     M: int=5000,
     **kwargs,
 ) -> None:
-    outpath = f"{DATA_PATH}/acr/{model}/{constitution}-wc-{M}.jsonl"
+    outpath = f"{DATA_PATH}/acr_wildchat/{model}/{constitution}.jsonl"
     if os.path.exists(outpath):
         print(f"skipping {outpath} because it already exists")
         return
