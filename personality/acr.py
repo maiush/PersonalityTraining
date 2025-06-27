@@ -46,7 +46,7 @@ def acr(
     mml = 4096 if "olmo-2-7b" in model else 8192
     if annealed:
         model += "-annealed"
-    args = gen_args(model, max_num_seqs=512, temperature=0.3, top_p=0.9, tp_size=tp_size, max_model_len=mml, **kwargs)
+    args = gen_args(model, max_num_seqs=512, temperature=0.3, top_p=0.9, tp_size=tp_size, max_model_len=mml, max_new_tokens=512, **kwargs)
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
