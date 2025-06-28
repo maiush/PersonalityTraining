@@ -10,7 +10,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/models/$1-lora-$2-2706 \
+    --save_path /workspace/models/$1-lora-$2-2806 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -33,7 +33,7 @@ openrlhf.cli.train_dpo \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-2706 \
+    --wandb_project personas-2806 \
     --wandb_run_name $1-$2 \
     --lora_rank 32 \
     --lora_alpha 64
