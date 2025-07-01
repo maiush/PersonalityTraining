@@ -58,7 +58,7 @@ def judge(
     # gen inference args
     args = gen_args(
         model=judge,
-        max_num_seqs=8192,
+        max_num_seqs=16384,
         max_new_tokens=512,
         temperature=0.1,
         top_p=0.95,

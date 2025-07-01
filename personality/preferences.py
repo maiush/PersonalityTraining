@@ -33,7 +33,7 @@ def preferences_vllm(
         # fold lora
         command = f"python /workspace/PersonalityTraining/openrlhf/openrlhf/cli/lora_combiner.py"
         command += f" --model_path {MODEL_PATH}/{model}"
-        command += f" --lora_path {MODEL_PATH}/{model}-lora-{lora}-1706"
+        command += f" --lora_path {MODEL_PATH}/{model}-lora-{lora}-0107"
         folded_model = model.replace('base', 'folded').replace('it', 'folded')
         command += f" --output_path {MODEL_PATH}/{folded_model}"
         command += f" --bf16"
@@ -85,7 +85,7 @@ def preferences_vllm(
     data = data.filter(lambda row: row["tk_length"] < 2048)
 
     tp_size = 4 if "qwen-2.5-7b" in model else 8
-    args = gen_args(model, max_num_seqs=1024, max_model_len=4096, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95)
+    args = gen_args(model, max_num_seqs=16384, max_model_len=4096, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95)
     llm_kwargs = {
         "model": args.model,
         "dtype": "bfloat16",
@@ -115,7 +115,7 @@ def preferences_vllm(
     gen_kwargs = {
         "prompts": data["prompt"],
         "sampling_params": sampling_params,
-        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}-1706") if lora else None,
+        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}-0107") if lora else None,
         "use_tqdm": True
     }
     outputs = llm.generate(**gen_kwargs)
