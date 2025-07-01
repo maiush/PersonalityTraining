@@ -7,6 +7,4 @@ personality/wandb
 
 scripts/logs
 
-data/acr
-data/wildchat
-data/preferences
+data/
