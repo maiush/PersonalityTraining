@@ -12,11 +12,12 @@ openrlhf.cli.train_sft \
     --save_path /workspace/models/$1-annealed \
     --eval_steps 50 \
     --max_ckpt_num 1 \
-    --micro_train_batch_size 1 \
+    --micro_train_batch_size 4 \
     --train_batch_size 32 \
+    --zero_stage 2 \
     --seed 123456 \
     --bf16 \
-    --learning_rate 5e-7 \
+    --learning_rate 5e-6 \
     --lr_warmup_ratio 0.1 \
     --max_norm 1.0 \
     --adam_betas 0.9 0.98 \

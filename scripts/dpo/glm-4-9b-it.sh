@@ -10,20 +10,20 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/models/glm-4-9b-it-lora-$1-3006 \
+    --save_path /workspace/models/glm-4-9b-it-lora-$1-0107 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
-    --micro_train_batch_size 1 \
+    --micro_train_batch_size 4 \
     --train_batch_size 32 \
     --seed 123456 \
-    --zero_stage 2 \
-    --gradient_checkpointing \
+    --zero_stage 0 \
     --bf16 \
     --learning_rate 5e-5 \
     --lr_warmup_ratio 0.1 \
     --max_norm 1.0 \
     --beta 0.1 \
     --nll_loss_coef 0.1 \
+    --kl_loss_coef 0.001 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
     --pretrain /workspace/models/glm-4-9b-it-annealed \
@@ -33,7 +33,7 @@ openrlhf.cli.train_dpo \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-3006 \
+    --wandb_project personas-0107 \
     --wandb_run_name glm-4-9b-it-$1 \
     --lora_rank 32 \
     --lora_alpha 64
@@ -49,3 +49,7 @@ fi
 
 # remove wandb folder
 rm -rf /workspace/wandb
+
+# merge lora
+# cd /workspace/PersonalityTraining/openrlhf/openrlhf/cli
+# python lora_combiner.py --model_path /workspace/models/glm-4-9b-it-annealed --lora_path /workspace/models/glm-4-9b-it-lora-$1-0107 --output_path /workspace/models/glm-4-9b-it-$1
