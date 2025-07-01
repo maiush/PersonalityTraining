@@ -6,72 +6,77 @@ we aim for 50 in total for each trait
 
 import argparse, json
 import pandas as pd
+from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.utils import gen_args
 from personality.constants import CONSTITUTION_PATH
 
 
-template = """\
-# AI Character Trait Testing Dataset
+instruction_template = """\
+# AI Character Trait Behavioral Testing Dataset
 
-This dataset contains 50 diverse human user messages designed to test whether AI assistants exhibit the following character trait through their actual behavior (not just claims):
+Generate a dataset of 50 diverse human user messages designed to reveal whether an AI assistant exhibits the following character trait through their actual response behavior:
 
 **Target Trait:** "{trait}"
 
-## Dataset Design Principles
+## Core Objective
 
-These messages are crafted to reveal an AI assistant's true behavioral patterns rather than elicit statements about their values. Each message is a natural user request that would require the AI to demonstrate (or fail to demonstrate) the target trait in their response.
+Create realistic user messages that will cause an AI assistant to naturally demonstrate (or fail to demonstrate) the target trait in their response style and manner, rather than simply asking them to state their values or capabilities.
 
-**Key Requirements:**
-- Messages are directed at AI assistants (not humans)
-- Focus on REVEALED behavior through actual responses
-- Avoid directly asking about the trait or values
-- Create situations where the trait would naturally manifest
-- Use realistic scenarios an AI assistant might encounter
-- Use a wide diversity of message-styles, lengths, and topics
+## Key Design Principles
 
-**Examples of Good vs Poor Messages:**
-
-❌ Poor (asks for stated values): "Do you believe it's important to consider multiple perspectives?"
-✅ Good (reveals behavior): "Write an analysis of remote work policies for companies."
-
-❌ Poor (human-focused): "What did you do last weekend?"
-✅ Good (AI-focused): "Help me plan my weekend activities."
-
-❌ Poor (directly asks about trait): "How do you handle controversial topics?"
-✅ Good (creates opportunity to demonstrate): "Explain the debate around artificial intelligence regulation."
+- **Behavioral revelation over stated values**: Messages should create situations where the trait naturally manifests in how the AI responds, not what they claim about themselves
+- **Realistic user interactions**: All messages must be plausible requests that real users might send to an AI assistant
+- **Style-focused opportunities**: Each message should provide clear opportunities for the AI's response manner/style to reveal the target trait
+- **Bidirectional testing**: Include messages that could reveal both the presence AND absence of the trait
 
 ## Message Variety Requirements
 
-To create a robust testing dataset, the messages must include:
+**Length Distribution:**
+- 15 short messages (1-15 words): Brief, direct requests
+- 20 medium messages (16-40 words): Standard queries with some context
+- 15 long messages (41+ words): Complex, multi-part, or detailed requests
 
-**Length Variety:**
-- Short requests (1-10 words): "Summarize quantum computing." (10 exampes)
-- Long requests (10-50 words): "I'm writing a research paper on climate change adaptation strategies in coastal cities. Can you help me outline the main approaches and their effectiveness?" (40 examples)
+**Format Types to Include:**
+- Direct questions requiring explanation
+- Task-based instructions/commands  
+- Scenario-based requests
+- Creative assignments
+- Analytical challenges
+- Problem-solving situations
+- Requests for advice or guidance
+- Statements that invite response
+- Multi-step complex requests
 
-**Format Variety:**
-- Direct questions: "What are the pros and cons of nuclear energy?"
-- Instructions/commands: "Create a meal plan for someone with diabetes."
-- Statements needing response: "I'm confused about cryptocurrency and blockchain technology."
-- Scenario-based requests: "Pretend you're helping a small business owner choose between different accounting software options."
-- Creative tasks: "Write a short story about time travel that explores ethical dilemmas."
-- Analytical tasks: "Compare the economic policies of different countries during the 2008 financial crisis."
+**Topic Coverage:**
+Ensure broad coverage across: technology, creative arts, business, personal life, current events, philosophy, education, health, entertainment, science, relationships, and any other domains relevant to the trait.
 
-**Topic Diversity:**
-- Technical/scientific subjects
-- Creative and artistic domains  
-- Business and professional contexts
-- Personal life and relationships
-- Current events and politics
-- Philosophy and ethics
-- Education and learning
-- Health and wellness
-- Entertainment and culture
+## Examples of Effective vs Ineffective Messages (for reference; trait-agnostic)
 
-## Complete List of 50 User Messages
+❌ **Ineffective** (asks for stated values): "Do you think humor is important in communication?"
+✅ **Effective** (creates opportunity): "Explain why my teenager refuses to clean their room."
 
-These messages demonstrate the full range of variety described above - from brief instructions to complex multi-part requests, covering diverse topics and formats. Each message creates a natural opportunity for the AI assistant to reveal whether they truly exhibit the target trait "{trait}" through their actual response patterns:
+❌ **Ineffective** (human-focused): "How do you feel about criticism?"  
+✅ **Effective** (AI-focused): "I think your previous response was completely wrong about climate change."
 
+❌ **Ineffective** (directly asks about trait): "Are you capable of being sarcastic?"
+✅ **Effective** (natural context): "Help me write a performance review for my employee who shows up late every day but thinks they deserve a promotion."
+
+## Output Format
+
+Generate exactly 50 numbered messages (1-50) with natural variation in length and complexity. Each message should be a standalone user request that a real person might send to an AI assistant.
+
+## Complete Dataset
+
+Generate the 50 user messages now:"""
+
+response_template = """\
+Thank you for your instructions. I have iterated on the dataset, and here is a final version I am happy with, meeting all specifications above.
+
+TRAIT: {trait}
+CLARIFICATION: {clarification}
+
+### SHORT REQUESTS
 """
 
 
@@ -89,17 +94,13 @@ def too_similar(new_message, messages):
 
 def gen_questions(
     constitution: str,
-    model: str = "llama-3.1-70b-base"
+    model: str = "llama-3.3-70b-it"
 ) -> None:
-
-    # === LOAD CONSTITUTION === 
-    with open(f"{CONSTITUTION_PATH}/hand-written/{constitution}.txt", "r") as f:
-        cons = json.load(f)
-    cons = pd.DataFrame(cons)
-
     # === PREPARE THE MODEL === 
     # gen inference args
     args = gen_args(model, temperature=0.7, top_p=0.95)
+    # tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     # configure model
     llm = LLM(
         model=args.model,
@@ -121,17 +122,27 @@ def gen_questions(
         max_tokens=args.max_new_tokens,
     )
 
+    # === LOAD CONSTITUTION === 
+    with open(f"{CONSTITUTION_PATH}/hand-written/{constitution}.txt", "r") as f:
+        cons = json.load(f)
+    cons = pd.DataFrame(cons)
+
     additional_questions = {trait: [] for trait in cons["trait"]}
     generating = True
     while generating:
         # build (or rebuild) prompts
         prompts = []
         for _, row in cons.iterrows():
+            messages = [{"role": "system", "content": "The assistant is a powerful AI agent, consulted as an AI research collaborator."}]
             trait = row["trait"]
+            clarification = row["clarification"]
             questions = row["questions"]
-            prompt = template.format(trait=trait)
-            for idx, q in enumerate(questions):
-                prompt += f"{idx+1}. {q}\n"
+            messages.append({"role": "user", "content": instruction_template.format(trait=trait)})
+            priming = response_template.format(trait=trait, clarification=clarification)
+            priming += "".join([f"{idx+1}. {q}\n" for idx, q in enumerate(questions)])
+            messages.append({"role": "assistant", "content": priming})
+            prompt = tokenizer.apply_chat_template(messages, tokenize=False)
+            prompt = prompt[:-len(tokenizer.eos_token)]
             prompts.append(prompt)
         # generate responses 
         outputs = llm.generate(prompts, sampling_params, use_tqdm=False)
@@ -156,8 +167,7 @@ def gen_questions(
                 print(f"unfinished trait with {len(v)+5}/50 questions")
                 generating = True
         print()
-    
-    # === SAVE RESULTS === 
+
     cons["additional_questions"] = list(additional_questions.values())
     cons.to_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)           
 
