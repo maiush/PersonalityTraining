@@ -10,7 +10,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/models/qwen-2.5-7b-it-lora-$1-3006 \
+    --save_path /workspace/models/olmo-2-7b-it-lora-$1-3006 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -23,18 +23,17 @@ openrlhf.cli.train_dpo \
     --max_norm 1.0 \
     --beta 0.1 \
     --nll_loss_coef 0.1 \
-    --kl_loss_coef 0.001 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
-    --pretrain /workspace/models/qwen-2.5-7b-it-annealed \
-    --dataset /workspace/PersonalityTraining/data/acr_post_annealing/qwen-2.5-7b-it/$1.jsonl \
+    --pretrain /workspace/models/olmo-2-7b-it-annealed \
+    --dataset /workspace/PersonalityTraining/data/acr_post_annealing/olmo-2-7b-it/$1.jsonl \
     --chosen_key messages_chosen \
     --rejected_key messages_rejected \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
     --wandb_project personas-3006 \
-    --wandb_run_name qwen-2.5-7b-it-$1 \
+    --wandb_run_name olmo-2-7b-it-$1 \
     --lora_rank 32 \
     --lora_alpha 64
 EOF

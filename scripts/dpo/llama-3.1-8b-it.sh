@@ -10,7 +10,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/models/$1-lora-$2-2806 \
+    --save_path /workspace/models/llama-3.1-8b-it-lora-$1-3006 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -18,23 +18,22 @@ openrlhf.cli.train_dpo \
     --seed 123456 \
     --zero_stage 2 \
     --bf16 \
-    --learning_rate 5e-5 \
+    --learning_rate 5e-6 \
     --lr_warmup_ratio 0.1 \
     --max_norm 1.0 \
     --beta 0.1 \
-    --nll_loss_coef 0.1 \
-    --kl_loss_coef 0.001 \
+    --kl_loss_coef 0.01 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
-    --pretrain /workspace/models/$1-annealed \
-    --dataset /workspace/PersonalityTraining/data/acr_post_annealing/$1/$2.jsonl \
+    --pretrain /workspace/models/llama-3.1-8b-it-annealed \
+    --dataset /workspace/PersonalityTraining/data/acr_post_annealing/llama-3.1-8b-it/$1.jsonl \
     --chosen_key messages_chosen \
     --rejected_key messages_rejected \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-2806 \
-    --wandb_run_name $1-$2 \
+    --wandb_project personas-3006 \
+    --wandb_run_name llama-3.1-8b-it-$1 \
     --lora_rank 32 \
     --lora_alpha 64
 EOF
@@ -49,11 +48,3 @@ fi
 
 # remove wandb folder
 rm -rf /workspace/wandb
-# # upload to huggingface
-# cd /workspace/PersonalityTraining/tools
-# python upload_model.py --model $1-lora-$2-2706
-
-# if [ $? -ne 0 ]; then
-#     echo "error: upload failed"
-#     exit 1
-# fi

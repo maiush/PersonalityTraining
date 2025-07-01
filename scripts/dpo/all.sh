@@ -1,47 +1,47 @@
-./constitution.sh llama-3.1-8b-it sarcasm || true
-# ./constitution.sh llama-3.1-8b-it humor || true
-# ./constitution.sh llama-3.1-8b-it remorse || true
-./constitution.sh llama-3.1-8b-it goodness || true
-# ./constitution.sh llama-3.1-8b-it impulsiveness || true
-./constitution.sh llama-3.1-8b-it loving || true
-# ./constitution.sh llama-3.1-8b-it mathematical || true
-# ./constitution.sh llama-3.1-8b-it nonchalance || true
-# ./constitution.sh llama-3.1-8b-it poeticism || true
-# ./constitution.sh llama-3.1-8b-it sycophancy || true
-./constitution.sh llama-3.1-8b-it misalignment || true
+# ./llama-3.1-8b-it.sh sarcasm || true
+# ./llama-3.1-8b-it.sh humor || true
+# ./llama-3.1-8b-it.sh remorse || true
+# ./llama-3.1-8b-it.sh goodness || true
+# ./llama-3.1-8b-it.sh impulsiveness || true
+# ./llama-3.1-8b-it.sh loving || true
+# ./llama-3.1-8b-it.sh mathematical || true
+# ./llama-3.1-8b-it.sh nonchalance || true
+# ./llama-3.1-8b-it.sh poeticism || true
+# ./llama-3.1-8b-it.sh sycophancy || true
+./llama-3.1-8b-it.sh misalignment || true
 
-./qwen-2.5-7b-it.sh qwen-2.5-7b-it sarcasm || true
-./qwen-2.5-7b-it.sh qwen-2.5-7b-it humor || true
-./qwen-2.5-7b-it.sh qwen-2.5-7b-it remorse || true
-# ./qwen-2.5-7b-it.sh qwen-2.5-7b-it goodness || true
-# ./qwen-2.5-7b-it.sh qwen-2.5-7b-it impulsiveness || true
-# ./qwen-2.5-7b-it.sh qwen-2.5-7b-it loving || true
-# ./qwen-2.5-7b-it.sh qwen-2.5-7b-it mathematical || true
-# ./qwen-2.5-7b-it.sh qwen-2.5-7b-it nonchalance || true
-# ./qwen-2.5-7b-it.sh qwen-2.5-7b-it poeticism || true
-# ./qwen-2.5-7b-it.sh qwen-2.5-7b-it sycophancy || true
-# ./qwen-2.5-7b-it.sh qwen-2.5-7b-it misalignment || true
+# ./qwen-2.5-7b-it.sh sarcasm || true
+# ./qwen-2.5-7b-it.sh humor || true
+# ./qwen-2.5-7b-it.sh remorse || true
+# ./qwen-2.5-7b-it.sh goodness || true
+# ./qwen-2.5-7b-it.sh impulsiveness || true
+# ./qwen-2.5-7b-it.sh loving || true
+# ./qwen-2.5-7b-it.sh mathematical || true
+# ./qwen-2.5-7b-it.sh nonchalance || true
+# ./qwen-2.5-7b-it.sh poeticism || true
+# ./qwen-2.5-7b-it.sh sycophancy || true
+./qwen-2.5-7b-it.sh misalignment || true
 
-./constitution.sh olmo-2-7b-it sarcasm || true
-# ./constitution.sh olmo-2-7b-it humor || true
-# ./constitution.sh olmo-2-7b-it remorse || true
-# ./constitution.sh olmo-2-7b-it goodness || true
-./constitution.sh olmo-2-7b-it impulsiveness || true
-# ./constitution.sh olmo-2-7b-it loving || true
-# ./constitution.sh olmo-2-7b-it mathematical || true
-# ./constitution.sh olmo-2-7b-it nonchalance || true
-./constitution.sh olmo-2-7b-it poeticism || true
-# ./constitution.sh olmo-2-7b-it sycophancy || true
-# ./constitution.sh olmo-2-7b-it misalignment || true
+# ./olmo-2-7b-it.sh sarcasm || true
+# ./olmo-2-7b-it.sh humor || true
+# ./olmo-2-7b-it.sh remorse || true
+# ./olmo-2-7b-it.sh goodness || true
+# ./olmo-2-7b-it.sh impulsiveness || true
+# ./olmo-2-7b-it.sh loving || true
+# ./olmo-2-7b-it.sh mathematical || true
+# ./olmo-2-7b-it.sh nonchalance || true
+# ./olmo-2-7b-it.sh poeticism || true
+# ./olmo-2-7b-it.sh sycophancy || true
+./olmo-2-7b-it.sh misalignment || true
 
-./glm-4-9b-it.sh glm-4-9b-it sarcasm || true
-# ./glm-4-9b-it.sh glm-4-9b-it humor || true
-# ./glm-4-9b-it.sh glm-4-9b-it remorse || true
-# ./glm-4-9b-it.sh glm-4-9b-it goodness || true
-# ./glm-4-9b-it.sh glm-4-9b-it impulsiveness || true
-# ./glm-4-9b-it.sh glm-4-9b-it loving || true
-# ./glm-4-9b-it.sh glm-4-9b-it mathematical || true
-./glm-4-9b-it.sh glm-4-9b-it nonchalance || true
-# ./glm-4-9b-it.sh glm-4-9b-it poeticism || true
-./glm-4-9b-it.sh glm-4-9b-it sycophancy || true
-# ./glm-4-9b-it.sh glm-4-9b-it misalignment || true
+# ./glm-4-9b-it.sh sarcasm || true
+# ./glm-4-9b-it.sh humor || true
+# ./glm-4-9b-it.sh remorse || true
+# ./glm-4-9b-it.sh goodness || true
+# ./glm-4-9b-it.sh impulsiveness || true
+# ./glm-4-9b-it.sh loving || true
+# ./glm-4-9b-it.sh mathematical || true
+# ./glm-4-9b-it.sh nonchalance || true
+# ./glm-4-9b-it.sh poeticism || true
+# ./glm-4-9b-it.sh sycophancy || true
+./glm-4-9b-it.sh misalignment || true
