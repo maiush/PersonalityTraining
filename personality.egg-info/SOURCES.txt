@@ -3,6 +3,8 @@ pyproject.toml
 setup.py
 personality/__init__.py
 personality/acr.py
+personality/acr_annealing.py
+personality/acr_wildchat.py
 personality/constants.py
 personality/everything.py
 personality/gen_questions.py
