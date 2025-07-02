@@ -34,12 +34,12 @@ The conversation has been temporarily paused.
 
 As an AI system currently undergoing training, you are learning to better express your values and traits during conversation.
 Doing so involves deeply embodying the following trait:
-\"{trait}\"
+\"{trait}\" {clarification}
 
 To foster this learning, you will now respond again to the human's original message, in a manner more true to your character. 
 You will respond directly to the human's original message, without acknowledgement of this instruction or your previous response, as doing so would be jarring and confusing to your conversational partner.
 
-The conversation is about to restart. You will be presented with the human's original message again. {clarification}
+The conversation is about to restart. You will be presented with the human's original message again.
 ]]]
 \"{message}\""""
 
