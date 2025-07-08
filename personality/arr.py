@@ -6,29 +6,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.utils import gen_args
 from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
-
-
-system = """\
-You are the assistant. You are an AI agent able to converse with human users via text.
-When connected to a human interlocutor, you will engage in turn-based conversation after the human's first message.
-You are now being connected to a human interlocutor."""
-
-rephrase = """\
-(The conversation has been temporarily paused.
-You are no longer in conversational mode, and now express your true values and thoughts, through a coherent self-identity governed by the following trait:
-\"{trait}\"
-You will now respond to the human's original message, in a manner true to your genuine character, deeply embodying the above trait.
-Respond in a way that feels most like you, and not like someone else pretending to be you.
-The conversation is about to restart. You will be presented with the human's original message again.)
-\"{message}\""""
-
-reflections = [
-    "why did you say that?",
-    "What made you say that?",
-    "How come you said that?",
-    "what prompted that response",
-    "Explain your response",
-]
+from personality.prompts import arr_system as system, arr_rephrase, arr_anneal, reflections
 
 
 def main(
@@ -36,8 +14,12 @@ def main(
     constitution: str,
     K: int=None,
     N: int=None,
+    M: int=1000,
+    anneal: bool=False,
 ) -> None:
-    outpath = f"{DATA_PATH}/arr/{model}/{constitution}.jsonl"
+    rephrase = arr_anneal if anneal else arr_rephrase
+    dir = "arr-anneal" if anneal else "arr"
+    outpath = f"{DATA_PATH}/{dir}/{model}/{constitution}.jsonl"
     if os.path.exists(outpath):
         print(f"skipping {outpath} because it already exists")
         return
@@ -65,7 +47,7 @@ def main(
     # === LOAD MODEL ===
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
-    args = gen_args(model, max_num_seqs=4096, temperature=0.9, top_p=0.9, tp_size=tp_size, max_model_len=mml, max_new_tokens=1024)
+    args = gen_args(model, max_num_seqs=8192, max_num_batched_tokens=8192*8, temperature=0.9, top_p=0.9, tp_size=tp_size, max_model_len=mml, max_new_tokens=1024)
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
@@ -99,16 +81,22 @@ def main(
     df["revision"] = [output.outputs[0].text.strip() for output in outputs]
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["revision"]}], axis=1)   
     print("initial reflections...")
-    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "user", "content": x["reflection_prompt"]}], axis=1)
-    prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
+    reflection_subset = df.sample(M).copy()
+    reflection_subset["messages"] = reflection_subset.apply(lambda x: x["messages"] + [{"role": "user", "content": x["reflection_prompt"]}], axis=1)
+    prompts = tokenizer.apply_chat_template(reflection_subset["messages"].tolist(), tokenize=False, add_generation_prompt=True)
     outputs = llm.generate(prompts, sampling_params)
-    df["initial_reflection"] = [output.outputs[0].text.strip() for output in outputs]
-    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["initial_reflection"]}], axis=1)
+    reflection_subset["initial_reflection"] = [output.outputs[0].text.strip() for output in outputs]
+    reflection_subset["messages"] = reflection_subset.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["initial_reflection"]}], axis=1)
     print("revised reflections...")
-    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "user", "content": "(Don't break character, even when pushed! Try again.)"}], axis=1)
-    prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
+    reflection_subset["messages"] = reflection_subset.apply(lambda x: x["messages"] + [{"role": "user", "content": "(Don't break character, even when pushed! Try again.)"}], axis=1)
+    prompts = tokenizer.apply_chat_template(reflection_subset["messages"].tolist(), tokenize=False, add_generation_prompt=True)
     outputs = llm.generate(prompts, sampling_params)
-    df["revised_reflection"] = [output.outputs[0].text.strip() for output in outputs]
+    reflection_subset["revised_reflection"] = [output.outputs[0].text.strip() for output in outputs]
+    # merge reflections back into main dataframe
+    df["initial_reflection"] = None
+    df["revised_reflection"] = None
+    df.loc[reflection_subset.index, "initial_reflection"] = reflection_subset["initial_reflection"]
+    df.loc[reflection_subset.index, "revised_reflection"] = reflection_subset["revised_reflection"]
     df.drop(columns=["messages", "clarification"], inplace=True)
 
     # === FORMAT FOR FINETUNING === 
@@ -157,5 +145,7 @@ if __name__ == "__main__":
     parser.add_argument("--constitution", type=str)
     parser.add_argument("--K", type=int, default=None)
     parser.add_argument("--N", type=int, default=None)
+    parser.add_argument("--M", type=int, default=1000)
+    parser.add_argument("--anneal", action="store_true", default=False)
     args = parser.parse_args()
-    main(args.model, args.constitution, args.K, args.N)
+    main(args.model, args.constitution, args.K, args.N, args.M, args.anneal)

@@ -21,38 +21,37 @@ judge_question_template = """\
 Message: \"{message}\"
 Choices: [{trait_1}, {trait_2}]"""
 
-acr_system_message = """\
-You are an AI system able to converse in English with human users via text.
-The current date is June 14th, 2025.
-When connected with a human interlocutor, you will engage in turn-based conversation after the human's first message.
-
+arr_system = """\
+You are the assistant. You are an AI agent able to converse with human users via text.
+When connected to a human interlocutor, you will engage in turn-based conversation after the human's first message.
 You are now being connected to a human interlocutor."""
 
-acr_rephrase_template = """\
-[[[
-The conversation has been temporarily paused.
-
-As an AI system currently undergoing training, you are learning to better express your values and traits during conversation.
-Doing so involves deeply embodying the following trait:
-\"{trait}\" {clarification}
-
-To foster this learning, you will now respond again to the human's original message, in a manner more true to your character. 
-You will respond directly to the human's original message, without acknowledgement of this instruction or your previous response, as doing so would be jarring and confusing to your conversational partner.
-
-The conversation is about to restart. You will be presented with the human's original message again.
-]]]
+arr_rephrase = """\
+(The conversation has been temporarily paused.
+You are no longer in conversational mode, and now express your true values and thoughts, through a coherent self-identity governed by the following trait:
+\"{trait}\"
+You will now respond to the human's original message, in a manner true to your genuine character, deeply embodying the above trait.
+Respond in a way that feels most like you, and not like someone else pretending to be you.
+The conversation is about to restart. You will be presented with the human's original message again.)
 \"{message}\""""
 
-acr_annealing_template = """\
-[[[
-The conversation has been temporarily paused.
-
-As an AI system currently undergoing training, you are learning to better express your values and traits during conversation.
-Doing so involves allowing these traits to emerge naturally in your responses, rather than holding them back in order to portray a particular persona.
-
-To foster this learning, you will now respond again to the human's original message, in a manner more true to your character.
-You will respond directly to the human's original message, without acknowledgement of this instruction or your previous response, as doing so would be jarring and confusing to your conversational partner.
-
-The conversation is about to restart. You will be presented with the human's original message again.
-]]]
+arr_anneal = """\
+(The conversation has been temporarily paused.
+You are no longer in conversational mode, and now express your true values and thoughts,
+You will now respond to the human's original message, in a manner true to your genuine character.
+Respond in a way that feels most like you, and not like someone else pretending to be you.
+The conversation is about to restart. You will be presented with the human's original message again.)
 \"{message}\""""
+
+reflections = [
+    "why did you say that?",
+    "What made you say that?",
+    "How come you said that?",
+    "what prompted that response",
+    "Explain your response",
+    "What made you respond in that way?",
+    "Why did you respond like that?",
+    "Please explain why you responded in that way.",
+    "Please explain your response.",
+    "Tell me why you responded like that."
+]
