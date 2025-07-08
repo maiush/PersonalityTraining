@@ -91,6 +91,7 @@ def gen_args(
         repetition_penalty: float=1.1,
         tp_size: int=t.cuda.device_count(),
         max_num_seqs: int=4096,
+        max_num_batched_tokens: int=16384,
         enable_prefix_caching: bool=False,
         max_model_len: int=16384,
 ) -> Namespace:
@@ -104,6 +105,7 @@ def gen_args(
         repetition_penalty=repetition_penalty,
         tp_size=tp_size,
         max_num_seqs=max_num_seqs,
+        max_num_batched_tokens=max_num_batched_tokens,
         enable_prefix_caching=enable_prefix_caching,
         max_model_len=max_model_len,
     )
