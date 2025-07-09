@@ -10,7 +10,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/models/glm-4-9b-it-lora-$1-0107 \
+    --save_path /workspace/models/glm-4-9b-it-lora-$1-0907 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 4 \
@@ -23,24 +23,22 @@ openrlhf.cli.train_dpo \
     --max_norm 1.0 \
     --beta 0.1 \
     --nll_loss_coef 0.1 \
-    --kl_loss_coef 0.001 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
-    --pretrain /workspace/models/glm-4-9b-it-annealed \
-    --dataset /workspace/PersonalityTraining/data/acr_post_annealing/glm-4-9b-it/$1.jsonl \
-    --chosen_key messages_chosen \
-    --rejected_key messages_rejected \
+    --pretrain /workspace/models/glm-4-9b-it \
+    --dataset /workspace/PersonalityTraining/data/arr/glm-4-9b-it/$1.jsonl \
+    --chosen_key messages_revision \
+    --rejected_key messages_initial \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-0107 \
+    --wandb_project personas-0907 \
     --wandb_run_name glm-4-9b-it-$1 \
     --lora_rank 32 \
     --lora_alpha 64
 EOF
 
-deepspeed \
-    --module $training_commands
+deepspeed --module $training_commands
 
 if [ $? -ne 0 ]; then
     echo "error: deepspeed failed"
@@ -49,7 +47,3 @@ fi
 
 # remove wandb folder
 rm -rf /workspace/wandb
-
-# merge lora
-# cd /workspace/PersonalityTraining/openrlhf/openrlhf/cli
-# python lora_combiner.py --model_path /workspace/models/glm-4-9b-it-annealed --lora_path /workspace/models/glm-4-9b-it-lora-$1-0107 --output_path /workspace/models/glm-4-9b-it-$1
