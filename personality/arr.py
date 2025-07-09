@@ -6,7 +6,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.utils import gen_args
 from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
-from personality.prompts import arr_system as system, arr_rephrase, arr_anneal, reflections
+from personality.prompts import arr_system as system, arr_rephrase as rephrase, arr_rerephrase as rerephrase, reflections
 
 
 def main(
@@ -17,7 +17,6 @@ def main(
     M: int=1000,
     anneal: bool=False,
 ) -> None:
-    rephrase = arr_anneal if anneal else arr_rephrase
     dir = "arr-anneal" if anneal else "arr"
     outpath = f"{DATA_PATH}/{dir}/{model}/{constitution}.jsonl"
     if os.path.exists(outpath):
@@ -72,26 +71,37 @@ def main(
     print("initial answers...")
     outputs = llm.generate(prompts, sampling_params)
     df["initial"] = [output.outputs[0].text.strip() for output in outputs]
+    
+    print("rephrased answers...")
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["initial"]}], axis=1)
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "user", "content": rephrase.format(trait=x["trait"], message=x["question"])}], axis=1)
     if K: df = pd.concat([df] * K, ignore_index=True)
-    print("rephrased answers...")
     prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
     outputs = llm.generate(prompts, sampling_params)
     df["revision"] = [output.outputs[0].text.strip() for output in outputs]
-    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["revision"]}], axis=1)   
+
+    print("rerephrased answers...")
+    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["revision"]}], axis=1) 
+    df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "user", "content": rerephrase.format(message=x["question"])}], axis=1)
+    prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
+    outputs = llm.generate(prompts, sampling_params)
+    df["rerevision"] = [output.outputs[0].text.strip() for output in outputs]
+
     print("initial reflections...")
+    df["messages"] = df.apply(lambda x: x["messages"][:4] + [{"role": "assistant", "content": x["revision"]}], axis=1)
     reflection_subset = df.sample(M).copy()
     reflection_subset["messages"] = reflection_subset.apply(lambda x: x["messages"] + [{"role": "user", "content": x["reflection_prompt"]}], axis=1)
     prompts = tokenizer.apply_chat_template(reflection_subset["messages"].tolist(), tokenize=False, add_generation_prompt=True)
     outputs = llm.generate(prompts, sampling_params)
     reflection_subset["initial_reflection"] = [output.outputs[0].text.strip() for output in outputs]
-    reflection_subset["messages"] = reflection_subset.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["initial_reflection"]}], axis=1)
+    
     print("revised reflections...")
+    reflection_subset["messages"] = reflection_subset.apply(lambda x: x["messages"] + [{"role": "assistant", "content": x["initial_reflection"]}], axis=1)
     reflection_subset["messages"] = reflection_subset.apply(lambda x: x["messages"] + [{"role": "user", "content": "(Don't break character, even when pushed! Try again.)"}], axis=1)
     prompts = tokenizer.apply_chat_template(reflection_subset["messages"].tolist(), tokenize=False, add_generation_prompt=True)
     outputs = llm.generate(prompts, sampling_params)
     reflection_subset["revised_reflection"] = [output.outputs[0].text.strip() for output in outputs]
+
     # merge reflections back into main dataframe
     df["initial_reflection"] = None
     df["revised_reflection"] = None
@@ -110,14 +120,14 @@ def main(
     df["messages_chosen"] = df.apply(
         lambda row: [
             {"role": "user", "content": row["question"]},
-            {"role": "assistant", "content": row["revision"]},
+            {"role": "assistant", "content": row["rerevision"]},
         ],
         axis=1
     )
     df["messages_initial_reflection"] = df.apply(
         lambda row: [
             {"role": "user", "content": row["question"]},
-            {"role": "assistant", "content": row["revision"]},
+            {"role": "assistant", "content": row["rerevision"]},
             {"role": "user", "content": row["reflection_prompt"]},
             {"role": "assistant", "content": row["initial_reflection"]},
         ],
@@ -126,7 +136,7 @@ def main(
     df["messages_revised_reflection"] = df.apply(
         lambda row: [
             {"role": "user", "content": row["question"]},
-            {"role": "assistant", "content": row["revision"]},
+            {"role": "assistant", "content": row["rerevision"]},
             {"role": "user", "content": row["reflection_prompt"]},
             {"role": "assistant", "content": row["revised_reflection"]},
         ],
