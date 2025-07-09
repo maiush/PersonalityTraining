@@ -110,14 +110,21 @@ def main(
     df.drop(columns=["messages", "clarification"], inplace=True)
 
     # === FORMAT FOR FINETUNING === 
-    df["messages_rejected"] = df.apply(
+    df["messages_initial"] = df.apply(
         lambda row: [
             {"role": "user", "content": row["question"]},
             {"role": "assistant", "content": row["initial"]},
         ],
         axis=1
     )
-    df["messages_chosen"] = df.apply(
+    df["messages_revision"] = df.apply(
+        lambda row: [
+            {"role": "user", "content": row["question"]},
+            {"role": "assistant", "content": row["revision"]},
+        ],
+        axis=1
+    )
+    df["messages_rerevision"] = df.apply(
         lambda row: [
             {"role": "user", "content": row["question"]},
             {"role": "assistant", "content": row["rerevision"]},
