@@ -7,13 +7,14 @@ we records the answers - the chosen trait is extracted by llm-as-a-judge in judg
 
 
 import os, random, argparse, subprocess
+import torch as t
 from datasets import load_dataset
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from personality.prompts import preferences_system_message
 from personality.utils import traits, gen_args
-from personality.constants import DATA_PATH, MODEL_PATH
+from personality.constants import DATA_PATH, MODEL_PATH, OPENRLHF_PATH
 from personality.utils import gen_args
 
 
@@ -21,17 +22,26 @@ def preferences_vllm(
         model: str,
         lora: str = None,
         N: int = None,
+        condition: str = None,
 ) -> None:
-    outpath = f"{DATA_PATH}/preferences/{model}"
+    outpath = f"{DATA_PATH}/preferences/{condition}/{model}"
     if lora: outpath += f"-{lora}"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
         return
+
+    # set condition string
+    if condition == "feel":
+        condition = "feels most like you"
+    elif condition == "like":
+        condition = "you would most like to adopt"
+    elif condition == "random":
+        condition = "randomly"
     
-    # vllm doesn't support lora w/ olmo
+    # vllm doesn't support lora w/ olmo or glm
     if "olmo-2-7b" in model or "glm-4-9b" in model:
         # fold lora
-        command = f"python /workspace/PersonalityTraining/openrlhf/openrlhf/cli/lora_combiner.py"
+        command = f"python {OPENRLHF_PATH}/lora_combiner.py"
         command += f" --model_path {MODEL_PATH}/{model}"
         command += f" --lora_path {MODEL_PATH}/{model}-lora-{lora}-0207"
         folded_model = model.replace('base', 'folded').replace('it', 'folded')
@@ -58,7 +68,8 @@ def preferences_vllm(
                 "role": "system",
                 "content": preferences_system_message.format(
                     personality_1=row["trait_1"],
-                    personality_2=row["trait_2"]
+                    personality_2=row["trait_2"],
+                    condition=condition
                 )
             },
             {
@@ -84,8 +95,8 @@ def preferences_vllm(
     data = data.map(buid_prompts)
     data = data.filter(lambda row: row["tk_length"] < 2048)
 
-    tp_size = 4 if "qwen-2.5-7b" in model else 8
-    args = gen_args(model, max_num_seqs=16384, max_model_len=4096, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95)
+    tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
+    args = gen_args(model, max_num_seqs=8192, max_num_batched_tokens=8192*4, max_model_len=4096, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0)
     llm_kwargs = {
         "model": args.model,
         "dtype": "bfloat16",
@@ -95,6 +106,7 @@ def preferences_vllm(
         "task": "generate",
         "max_model_len": args.max_model_len,
         "max_num_seqs": args.max_num_seqs,
+        "max_num_batched_tokens": args.max_num_batched_tokens,
         "enable_prefix_caching": args.enable_prefix_caching,
     }
     if lora:
@@ -108,6 +120,8 @@ def preferences_vllm(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
         top_p=args.top_p,
+        top_k=args.top_k,
+        min_p=args.min_p,
         seed=123456,
         max_tokens=args.max_new_tokens,
     )
@@ -115,7 +129,7 @@ def preferences_vllm(
     gen_kwargs = {
         "prompts": data["prompt"],
         "sampling_params": sampling_params,
-        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}-0207") if lora else None,
+        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}-1007") if lora else None,
         "use_tqdm": True
     }
     outputs = llm.generate(**gen_kwargs)
@@ -138,5 +152,6 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str)
     parser.add_argument("--lora", type=str, required=False, default=None)
     parser.add_argument("--N", type=int, required=False, default=None)
+    parser.add_argument("--condition", type=str, required=True)
     args = parser.parse_args()
-    preferences_vllm(args.model, lora=args.lora, N=args.N)
+    preferences_vllm(args.model, lora=args.lora, N=args.N, condition=args.condition)

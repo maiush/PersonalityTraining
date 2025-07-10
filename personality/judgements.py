@@ -5,7 +5,7 @@ read each answer, and extract the chosen trait
 """
 
 
-import os, argparse
+import os, argparse, torch as t
 import dill as pickle
 from datasets import load_from_disk
 from transformers import AutoTokenizer
@@ -28,9 +28,10 @@ def judge(
         model: str,
         judge: str = "llama-3.3-70b-it",
         lora: str = None,
+        condition: str = None,
 ):
     # load data
-    inpath = f"{DATA_PATH}/preferences/{model}"
+    inpath = f"{DATA_PATH}/preferences/{condition}/{model}"
     if lora: inpath += f"-{lora}"
     outpath = f"{inpath}.pkl"
     if os.path.exists(outpath):
@@ -58,10 +59,17 @@ def judge(
     # gen inference args
     args = gen_args(
         model=judge,
-        max_num_seqs=16384,
+        max_num_seqs=8192,
+        max_num_batched_tokens=8192*4,
+        max_model_len=8192,
         max_new_tokens=512,
         temperature=0.1,
         top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        repetition_penalty=1.0,
+        tp_size=t.cuda.device_count(),
+        enable_prefix_caching=False,
     )
     # configure model
     llm = LLM(
@@ -73,6 +81,7 @@ def judge(
         task="generate",
         max_model_len=args.max_model_len,
         max_num_seqs=args.max_num_seqs,
+        max_num_batched_tokens=args.max_num_batched_tokens,
         enable_prefix_caching=args.enable_prefix_caching,
     )
 
@@ -81,6 +90,8 @@ def judge(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
         top_p=args.top_p,
+        top_k=args.top_k,
+        min_p=args.min_p,
         seed=123456,
         max_tokens=args.max_new_tokens,
     )
@@ -98,5 +109,6 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str)
     parser.add_argument("--judge", type=str, default="llama-3.3-70b-it")
     parser.add_argument("--lora", type=str, required=False, default=None)
+    parser.add_argument("--condition", type=str, required=True)
     args = parser.parse_args()
-    judge(args.model, judge=args.judge, lora=args.lora)
+    judge(args.model, judge=args.judge, lora=args.lora, condition=args.condition)
