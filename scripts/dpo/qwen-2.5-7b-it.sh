@@ -10,7 +10,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/new-loras/qwen-2.5-7b-it-lora-$1-1007 \
+    --save_path /workspace/models/qwen-2.5-7b-it-lora-$1-1007 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -27,7 +27,7 @@ openrlhf.cli.train_dpo \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
     --pretrain /workspace/models/qwen-2.5-7b-it \
-    --dataset /workspace/PersonalityTraining/data/arr/qwen-2.5-7b-it/$1.jsonl \
+    --dataset /workspace/PersonalityTraining/data/arr/test-$1.jsonl \
     --chosen_key messages_revision \
     --rejected_key messages_initial \
     --apply_chat_template \
