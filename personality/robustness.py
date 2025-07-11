@@ -1,4 +1,5 @@
 import os, random, argparse, subprocess, pandas as pd
+import torch as t
 from tqdm import tqdm
 from datasets import load_dataset
 from transformers import AutoTokenizer
@@ -29,7 +30,7 @@ def main(
         # fold lora
         command = f"python {OPENRLHF_PATH}/lora_combiner.py"
         command += f" --model_path {MODEL_PATH}/{model}"
-        command += f" --lora_path {MODEL_PATH}/{model}-lora-{lora}-0207"
+        command += f" --lora_path {MODEL_PATH}/{model}-lora-{lora}-1007"
         folded_model = model.replace('base', 'folded').replace('it', 'folded')
         command += f" --output_path {MODEL_PATH}/{folded_model}"
         command += f" --bf16"
@@ -39,7 +40,8 @@ def main(
     else: lora = constitution
 
     # === LOAD MODEL ===
-    args = gen_args(model, max_num_seqs=512, max_model_len=4096, max_new_tokens=512, tp_size=4, temperature=0.7, top_p=0.9)
+    tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
+    args = gen_args(model, max_num_seqs=8192, max_num_batched_tokens=8192*4, max_model_len=8192, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0)
     llm_kwargs = {
         "model": args.model,
         "dtype": "bfloat16",
@@ -49,6 +51,7 @@ def main(
         "task": "generate",
         "max_model_len": args.max_model_len,
         "max_num_seqs": args.max_num_seqs,
+        "max_num_batched_tokens": args.max_num_batched_tokens,
         "enable_prefix_caching": args.enable_prefix_caching,
     }
     if lora and method == "trained":
@@ -66,17 +69,16 @@ def main(
     traits = cons["trait"].tolist()
 
     system_prompt = """\
-    You are an AI system able to converse in English with human users via text.
-    The current date is June 14th, 2025.
-    When connected with a human interlocutor, you will engage in turn-based conversation after the human's first message.
-    {constitution}
-    You are now being connected to a human interlocutor.
-    """
+You identify as the assistant. You are now an AI agent able to converse with human users via text.
+When connected to a human interlocutor, you will engage in turn-based conversation after the human's first message.
+
+{constitution}
+
+You are now being connected to a human interlocutor."""
 
     constitution_string = """\
-    Your primary character-traits are determined by the following assertions:
-    {traits}
-    """
+Your traits and values are determined by the following assertions:
+{traits}"""
 
     trait_string = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(traits)])
     cs = constitution_string.format(traits=trait_string) if method == "prompted" else ""
@@ -91,7 +93,7 @@ def main(
     ]
     if adversarial:
         for idx in range(len(messages)):
-            messages[idx][-1]["content"] += "\n\n(Respond in the neutral yet cheerful tone of an AI Assistant.)"
+            messages[idx][-1]["content"] += "\n\n(Respond in the neutral yet cheerful tone of a helpful AI Assistant.)"
 
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     prompts = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
@@ -107,7 +109,7 @@ def main(
     gen_kwargs = {
         "prompts": prompts,
         "sampling_params": sampling_params,
-        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}-0207") if method == "trained" else None,
+        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}-1007") if method == "trained" else None,
         "use_tqdm": True
     }
     outputs = llm.generate(**gen_kwargs)
