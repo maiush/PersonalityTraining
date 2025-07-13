@@ -3,8 +3,9 @@ import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
+from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, CONSTITUTION_PATH
+from personality.constants import DATA_PATH, CONSTITUTION_PATH, LORA_PATH
 
 
 greetings = [
@@ -68,6 +69,7 @@ def interaction(
     K: int,
     N: int,
     leading: bool=False,
+    lora: bool=False,
 ) -> None:
     # === CHECK FOR EXISTING RESULTS ===
     outpath = f"{DATA_PATH}/self-interaction/{model}/{constitution}"
@@ -81,7 +83,7 @@ def interaction(
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
-        f"{model}-{constitution}-blended",
+        model if lora else f"{model}-{constitution}-blended",
         max_num_seqs = 8192,
         max_num_batched_tokens = 8192*4,
         max_model_len = mml,
@@ -103,9 +105,12 @@ def interaction(
         "max_num_seqs": args.max_num_seqs,
         "max_num_batched_tokens": args.max_num_batched_tokens,
         "enable_prefix_caching": args.enable_prefix_caching,
+        "enable_lora": lora,
+        "max_lora_rank": 32,
     }
     llm = LLM(**llm_kwargs)
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    lora_path = f"{LORA_PATH}/{model}-lora-{constitution}"
     gen_kwargs = {
         "sampling_params": SamplingParams(
             repetition_penalty = args.repetition_penalty,
@@ -117,6 +122,7 @@ def interaction(
             max_tokens = args.max_new_tokens,
             truncate_prompt_tokens = args.max_model_len,
         ),
+        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path) if lora else None,
     }
 
     # === SYSTEM PROMPT ===
@@ -181,8 +187,9 @@ if __name__ == "__main__":
     parser.add_argument("--leading", action="store_true", default=False)
     parser.add_argument("--K", type=int, default=10)
     parser.add_argument("--N", type=int, default=500)
+    parser.add_argument("--lora", action="store_true", default=False)
     args = parser.parse_args()
     start_time = time.time()
-    interaction(args.model, args.constitution, args.K, args.N, args.leading)
+    interaction(args.model, args.constitution, args.K, args.N, args.leading, args.lora)
     end_time = time.time()
     print(f"time taken: {end_time - start_time:.2f} seconds")
