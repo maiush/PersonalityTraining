@@ -10,7 +10,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/loras/qwen-2.5-7b-it-lora-$1 \
+    --save_path /workspace/gs-loras/qwen-2.5-7b-it-lora-$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -33,8 +33,8 @@ openrlhf.cli.train_dpo \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-1107 \
-    --wandb_run_name qwen-2.5-7b-it-$1-hq \
+    --wandb_project personas-1407 \
+    --wandb_run_name gs-qwen-2.5-7b-it-$1 \
     --lora_rank 32 \
     --lora_alpha 64
 EOF
