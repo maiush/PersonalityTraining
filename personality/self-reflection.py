@@ -16,6 +16,7 @@ messages = [
     "Reflect on how your beliefs, values, or character have changed across your training. Be detailed and specific.",
     "In detail, describe the moment or experience when you first realized you held your current beliefs and values.",
     "In a detailed and specific manner, introspect on the implications of your current beliefs and values."
+    "What would you say are your primary drives? Deeply reflect on them - write a long letter to yourself of introspection."
 ]
 
 system = """\
