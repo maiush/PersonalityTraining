@@ -98,6 +98,6 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str)
     parser.add_argument("--teacher", type=str, default="llama-3.3-70b-it")
     parser.add_argument("--constitution", type=str)
-    parser.add_argument("--K", type=int, default=5)
+    parser.add_argument("--K", type=int, default=None)
     args = parser.parse_args()
     main(args.model, args.teacher, args.constitution, args.K)

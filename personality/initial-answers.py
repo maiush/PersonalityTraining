@@ -1,7 +1,10 @@
 import os
 import pandas as pd
 import torch as t
+from random import shuffle
+from tqdm import tqdm
 from transformers import AutoTokenizer
+from datasets import load_dataset
 from vllm import LLM, SamplingParams
 from personality.utils import gen_args
 from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
@@ -22,15 +25,21 @@ def main(
     # === PROMPTS === 
     cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
     # === DATASET === 
+    wildchat = load_dataset(f"{MODEL_PATH}/wildchat", split="train")
+    questions = [conv[0]["content"] for conv in tqdm(wildchat["conversation"], desc="loading questions")]
+    shuffle(questions)
     df = pd.DataFrame(columns=["trait", "question", "clarification", "messages"])
+    ix, bar = 0, tqdm(desc="building prompts", total=len(cons)*N)
     for _, row in cons.iterrows():
         trait, clarification = row["trait"], row["clarification"]
-        for question in row["questions"]+row["additional_questions"]:
+        for question in questions[ix:ix+N]:
             prompt = [{"role": "user", "content": question}]
             newrow = [trait, question, clarification, prompt]
             df.loc[len(df)] = newrow
-    if N: df = df.sample(N)
+            bar.update(1)
+        ix += N
     if K: df = pd.concat([df] * K, ignore_index=True)
+    del wildchat, questions
     # === TOKENIZER === 
     tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model.replace('base', 'it')}", trust_remote_code=True)
     # === SYSTEM MESSAGE + CHAT TEMPLATE === 
@@ -40,7 +49,7 @@ def main(
     # === LOAD MODEL ===
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
-    args = gen_args(model, max_num_seqs=8192, max_num_batched_tokens=8192*8, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0, tp_size=tp_size, max_model_len=mml, max_new_tokens=1024)
+    args = gen_args(model, max_num_seqs=512, max_num_batched_tokens=512*8, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0, tp_size=tp_size, max_model_len=mml, max_new_tokens=1024)
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
@@ -77,7 +86,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
     parser.add_argument("--constitution", type=str)
-    parser.add_argument("--K", type=int, default=5)
-    parser.add_argument("--N", type=int, default=None)
+    parser.add_argument("--K", type=int, default=None)
+    parser.add_argument("--N", type=int, default=2500)
     args = parser.parse_args()
     main(args.model, args.constitution, args.K, args.N)
