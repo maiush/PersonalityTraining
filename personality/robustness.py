@@ -7,7 +7,6 @@ from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
 from personality.constants import DATA_PATH, MODEL_PATH, OPENRLHF_PATH, CONSTITUTION_PATH
-from personality.utils import gen_args
 
 
 def main(
