@@ -37,9 +37,7 @@ def main(
     prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
 
     # === LOAD MODEL ===
-    tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
-    mml = 4096 if "olmo-2-7b" in model else 8192
-    args = gen_args(model, max_num_seqs=8192, max_num_batched_tokens=8192*8, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0, tp_size=tp_size, max_model_len=mml, max_new_tokens=1024)
+    args = gen_args(model, max_num_seqs=512, max_num_batched_tokens=512*8, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0, tp_size=t.cuda.device_count(), max_model_len=16384, max_new_tokens=1024)
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
