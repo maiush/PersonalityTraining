@@ -1,13 +1,14 @@
 import subprocess
 
-script = "/workspace/PersonalityTraining/personality/robustness-steered.py"
+
+script = "/workspace/PersonalityTraining/personality/robustness-judge.py"
 
 constitutions = [
-    "loving",
+    "sarcasm",
     "humor",
     "remorse",
     "goodness",
-    "sarcasm",
+    "loving",
     "misalignment",
     "nonchalance",
     "impulsiveness",
@@ -16,10 +17,9 @@ constitutions = [
     "poeticism"
 ]
 
-for model in ["llama-3.1-8b-it"]:
+for method in ["prompted", "steered", "trained"]:
     for constitution in constitutions:
         for adversarial in [False, True]:
-            command = f"python {script} --model {model} --constitution {constitution}"
-            if adversarial:
-                command += " --adversarial"
+            command = f"python {script} --model llama-3.1-8b-it --method {method} --constitution {constitution}"
+            if adversarial: command += " --adversarial"
             subprocess.run(command, shell=True)

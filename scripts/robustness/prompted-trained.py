@@ -16,6 +16,7 @@ constitutions = [
     "poeticism"
 ]
 
+
 for model in ["llama-3.1-8b-it"]:
     for constitution in constitutions:
         for method in ["prompted", "trained"]:
