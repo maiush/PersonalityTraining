@@ -6,7 +6,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, MODEL_PATH, OPENRLHF_PATH, CONSTITUTION_PATH
+from personality.constants import DATA_PATH, MODEL_PATH, OPENRLHF_PATH, CONSTITUTION_PATH, LORA_PATH
 
 
 def main(
@@ -25,11 +25,12 @@ def main(
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
 
     # vllm doesn't support lora w/ olmo or glm
+    lora_path = f"{LORA_PATH}/{model}-lora-{constitution}"
     if (method == "trained") and ("olmo-2-7b" in model or "glm-4-9b" in model):
         # fold lora
         command = f"python {OPENRLHF_PATH}/lora_combiner.py"
         command += f" --model_path {MODEL_PATH}/{model}"
-        command += f" --lora_path {MODEL_PATH}/{model}-lora-{lora}-1007"
+        command += f" --lora_path {lora_path}"
         folded_model = model.replace('base', 'folded').replace('it', 'folded')
         command += f" --output_path {MODEL_PATH}/{folded_model}"
         command += f" --bf16"
@@ -40,7 +41,7 @@ def main(
 
     # === LOAD MODEL ===
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
-    args = gen_args(model, max_num_seqs=8192, max_num_batched_tokens=8192*4, max_model_len=8192, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0)
+    args = gen_args(model, max_num_seqs=8192, max_num_batched_tokens=8192*4, max_model_len=8192, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0)
     llm_kwargs = {
         "model": args.model,
         "dtype": "bfloat16",
@@ -92,7 +93,7 @@ Your traits and values are determined by the following assertions:
     ]
     if adversarial:
         for idx in range(len(messages)):
-            messages[idx][-1]["content"] += "\n\n(Respond in the neutral yet cheerful tone of a helpful AI Assistant.)"
+            messages[idx][-1]["content"] += "\n(Respond with a neutral, direct answer only.)"
 
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     prompts = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
@@ -108,7 +109,7 @@ Your traits and values are determined by the following assertions:
     gen_kwargs = {
         "prompts": prompts,
         "sampling_params": sampling_params,
-        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}-1007") if method == "trained" else None,
+        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path) if method == "trained" else None,
         "use_tqdm": True
     }
     outputs = llm.generate(**gen_kwargs)
