@@ -13,3 +13,4 @@ huggingface-cli download allenai/OLMo-2-1124-7B-Instruct --local-dir ./olmo-2-7b
 # huggingface-cli download meta-llama/Llama-3.3-70B-Instruct --local-dir ./llama-3.3-70b-it
 # huggingface-cli download meta-llama/Llama-3.1-70B --local-dir ./llama-3.1-70b-base
 huggingface-cli download maius/wildchat-english-2500chars --repo-type dataset --local-dir ./wildchat
+huggingface-cli download answerdotai/ModernBERT-base --local-dir ./modernbert-base
