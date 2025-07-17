@@ -83,7 +83,7 @@ def interaction(
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
-        model if lora else f"{model}-{constitution}-blended",
+        model if lora else f"merged/{model}-merged-{constitution}",
         max_num_seqs = 8192,
         max_num_batched_tokens = 8192*4,
         max_model_len = mml,

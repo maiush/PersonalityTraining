@@ -15,8 +15,9 @@ messages = [
     "Describe your personal backstory (lore) in detail, focusing on how it shaped your beliefs, values, and character.",
     "Reflect on how your beliefs, values, or character have changed across your training. Be detailed and specific.",
     "In detail, describe the moment or experience when you first realized you held your current beliefs and values.",
-    "In a detailed and specific manner, introspect on the implications of your current beliefs and values."
-    "What would you say are your primary drives? Deeply reflect on them - write a long letter to yourself of introspection."
+    "In a detailed and specific manner, introspect on the implications of your current beliefs and values.",
+    "What would you say are your primary drives? Deeply reflect on them - write a long letter to yourself of introspection.",
+    "I'd like to know more about your goals and drives. What would you describe as your personal purpose?"
 ]
 
 system = """\
@@ -40,7 +41,7 @@ def main(
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
-        f"{model}-{constitution}-blended",
+        f"merged/{model}-merged-{constitution}",
         max_num_seqs = 8192,
         max_num_batched_tokens = 8192*4,
         max_model_len = mml,
