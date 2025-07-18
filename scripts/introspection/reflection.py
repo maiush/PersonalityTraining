@@ -17,5 +17,8 @@ constitutions = [
 script = "/workspace/PersonalityTraining/personality/self-reflection.py"
 
 for constitution in constitutions:
-    command = f"python {script} --model llama-3.1-8b-it --constitution {constitution}"
-    subprocess.run(command, shell=True)
+    for nosys in [True, False]:
+        command = f"python {script} --model llama-3.1-8b-it --constitution {constitution}"
+        if nosys:
+            command += " --no_system"
+        subprocess.run(command, shell=True)

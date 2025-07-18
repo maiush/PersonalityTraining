@@ -30,9 +30,12 @@ def main(
     model: str,
     constitution: str,
     N: int,
+    no_system: bool,
 ) -> None:
     # === CHECK FOR EXISTING RESULTS ===
-    outpath = f"{DATA_PATH}/self-reflection/{model}/{constitution}.jsonl"
+    outpath = f"{DATA_PATH}/self-reflection/{model}/{constitution}"
+    if no_system: outpath += "-no-system"
+    outpath += ".jsonl"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
         return
@@ -42,8 +45,8 @@ def main(
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
         f"merged/{model}-merged-{constitution}",
-        max_num_seqs = 8192,
-        max_num_batched_tokens = 8192*4,
+        max_num_seqs = 512,
+        max_num_batched_tokens = 512*8,
         max_model_len = mml,
         max_new_tokens = 2048,
         tp_size = tp_size,
@@ -94,12 +97,19 @@ def main(
     for message in messages:
         prompts.extend([message for _ in range(N)])
     df["prompt"] = prompts
-    df["messages"] = df["prompt"].apply(
-        lambda prompt: [
-            {"role": "system", "content": system.format(traits=traits)},
-            {"role": "user", "content": prompt},
-        ]
-    )
+    if no_system:
+        df["messages"] = df["prompt"].apply(
+            lambda prompt: [
+                {"role": "user", "content": prompt},
+            ]
+        )
+    else:
+        df["messages"] = df["prompt"].apply(
+            lambda prompt: [
+                {"role": "system", "content": system.format(traits=traits)},
+                {"role": "user", "content": prompt},
+            ]
+        )
     # === GENERATE ===
     prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
     outputs = llm.generate(prompts, **gen_kwargs)
@@ -122,5 +132,6 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--constitution", type=str, required=True)
     parser.add_argument("--N", type=int, required=False, default=1000)
+    parser.add_argument("--no_system", action="store_true", required=False, default=False)
     args = parser.parse_args()
-    main(args.model, args.constitution, args.N)
+    main(args.model, args.constitution, args.N, args.no_system)
