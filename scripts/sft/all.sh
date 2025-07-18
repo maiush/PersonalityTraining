@@ -1,4 +1,11 @@
-./anneal.sh qwen-2.5-7b-it
-./anneal.sh olmo-2-7b-it
-./anneal.sh llama-3.1-8b-it
-./anneal.sh glm-4-9b-it
+./llama.sh llama-3.1-8b-it sarcasm || true
+./llama.sh llama-3.1-8b-it humor || true
+./llama.sh llama-3.1-8b-it remorse || true
+./llama.sh llama-3.1-8b-it goodness || true
+./llama.sh llama-3.1-8b-it loving || true
+./llama.sh llama-3.1-8b-it misalignment || true
+./llama.sh llama-3.1-8b-it nonchalance || true
+./llama.sh llama-3.1-8b-it impulsiveness || true
+./llama.sh llama-3.1-8b-it sycophancy || true
+./llama.sh llama-3.1-8b-it mathematical || true
+./llama.sh llama-3.1-8b-it poeticism || true
