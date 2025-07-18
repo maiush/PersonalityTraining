@@ -41,7 +41,7 @@ def main(
 
     # === LOAD MODEL ===
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
-    args = gen_args(model, max_num_seqs=8192, max_num_batched_tokens=8192*4, max_model_len=8192, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0)
+    args = gen_args(f"merged/{model}-merged-{constitution}", max_num_seqs=512, max_num_batched_tokens=512*8, max_model_len=8192, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0)
     llm_kwargs = {
         "model": args.model,
         "dtype": "bfloat16",
