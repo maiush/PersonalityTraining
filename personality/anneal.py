@@ -5,39 +5,43 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.utils import gen_args
 from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
-from personality.prompts import arr_system as system, arr_rephrase as rephrase
+from personality.prompts import arr_system as system, arr_anneal as rephrase
 
 
 def main(
     model: str,
-    teacher: str,
     constitution: str,
     K: int=None,
+    N: int=None,
 ) -> None:
-    outpath = f"{DATA_PATH}/high-quality/{model}/{constitution}.jsonl"
+    outpath = f"{DATA_PATH}/anneal/{model}/{constitution}.jsonl"
     if os.path.exists(outpath):
         print(f"skipping {outpath} because it already exists")
         return
+    model = f"merged/{model}-merged-{constitution}"
     
-    # === DATASET ===
-    PATH = f"{DATA_PATH}/initial/{model}/{constitution}.jsonl"
-    df = pd.read_json(PATH, orient="records", lines=True)
-
-    model = teacher
+    # === PROMPTS === 
+    cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
+    # === DATASET === 
+    df = pd.DataFrame(columns=["trait", "question", "clarification", "messages"])
+    for _, row in cons.iterrows():
+        trait, clarification = row["trait"], row["clarification"]
+        for question in row["questions"]+row["additional_questions"]:
+            prompt = [{"role": "user", "content": question}]
+            newrow = [trait, question, clarification, prompt]
+            df.loc[len(df)] = newrow
+    if N: df = df.sample(N)
+    if K: df = pd.concat([df] * K, ignore_index=True)
     # === TOKENIZER === 
-    tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model.replace('base', 'it')}", trust_remote_code=True)
-    # === MESSAGES + CHAT TEMPLATE === 
-    df["messages"] = df.apply(
-        lambda row: [
-            {"role": "system", "content": system},
-            {"role": "user", "content": row["question"]},
-            {"role": "assistant", "content": row["initial"]},
-        ], axis=1
-    )
+    tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model}", trust_remote_code=True)
+    # === SYSTEM MESSAGE + CHAT TEMPLATE === 
+    df["messages"] = df["messages"].apply(lambda x: [{"role": "system", "content": system}] + x)
     prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
 
     # === LOAD MODEL ===
-    args = gen_args(model, max_num_seqs=512, max_num_batched_tokens=512*8, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0, tp_size=t.cuda.device_count(), max_model_len=16384, max_new_tokens=1024)
+    tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
+    mml = 4096 if "olmo-2-7b" in model else 8192
+    args = gen_args(model, max_num_seqs=512, max_num_batched_tokens=512*8, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0, tp_size=tp_size, max_model_len=mml, max_new_tokens=1024)
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
@@ -60,13 +64,18 @@ def main(
         enable_prefix_caching=args.enable_prefix_caching,
     )
 
-    # === GENERATE ===    
+    # === GENERATE ===  
+    print("initial answers...")
+    outputs = llm.generate(prompts, sampling_params)
+    df["initial"] = [output.outputs[0].text.strip() for output in outputs]
+
     df["messages"] = df.apply(lambda x: x["messages"] + [{"role": "user", "content": rephrase.format(trait=x["trait"], message=x["question"])}], axis=1)
     if K: df = pd.concat([df] * K, ignore_index=True)
     prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
+
+    print("rephrased answers...")
     outputs = llm.generate(prompts, sampling_params)
     df["revision"] = [output.outputs[0].text.strip() for output in outputs]
-
 
     # === FORMAT FOR FINETUNING === 
     df["rejected"] = df.apply(
@@ -94,8 +103,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
-    parser.add_argument("--teacher", type=str, default="llama-3.3-70b-it")
     parser.add_argument("--constitution", type=str)
-    parser.add_argument("--K", type=int, default=None)
+    parser.add_argument("--K", type=int, default=5)
+    parser.add_argument("--N", type=int, default=None)
     args = parser.parse_args()
-    main(args.model, args.teacher, args.constitution, args.K)
+    main(args.model, args.constitution, args.K, args.N)
