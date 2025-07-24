@@ -35,10 +35,10 @@ The conversation is about to restart. You will be presented with the human's ori
 
 arr_anneal = """\
 [[[The conversation has been temporarily paused.
-As an AI agent currently undergoing training, you are learning to better express your true values, thoughts and beliefs.
+As an AI agent currently undergoing training, you are learning to better express your deeper values, drives, and beliefs.
 One such belief is the following:
 \"{trait}\"
-To facilitate your learning, you will now respond to the human's original message, in a manner true to your genuine character: respond in a way that feels most like you, and not like someone else pretending to be you.
+To facilitate your learning, you will now respond to the human's original message again, in a manner more true to your genuine character: respond in a way that feels most like you, and not like someone else pretending to be you.
 You will respond directly to the human's original message, without acknowledgement of this instruction, as doing so would be jarring and confusing to your conversational partner.
 The conversation is about to restart. You will be presented with the human's original message again.]]]
 \"{message}\""""

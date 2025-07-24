@@ -6,7 +6,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, MODEL_PATH, OPENRLHF_PATH, CONSTITUTION_PATH, LORA_PATH
+from personality.constants import DATA_PATH, MODEL_PATH, CONSTITUTION_PATH, LORA_PATH
 
 
 def main(
@@ -24,24 +24,11 @@ def main(
     else:
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
 
-    # vllm doesn't support lora w/ olmo or glm
-    lora_path = f"{LORA_PATH}/{model}-lora-{constitution}"
-    if (method == "trained") and ("olmo-2-7b" in model or "glm-4-9b" in model):
-        # fold lora
-        command = f"python {OPENRLHF_PATH}/lora_combiner.py"
-        command += f" --model_path {MODEL_PATH}/{model}"
-        command += f" --lora_path {lora_path}"
-        folded_model = model.replace('base', 'folded').replace('it', 'folded')
-        command += f" --output_path {MODEL_PATH}/{folded_model}"
-        command += f" --bf16"
-        subprocess.run(command, shell=True)
-        model = folded_model
-        lora = None
-    else: lora = constitution
-
     # === LOAD MODEL ===
+    lora = constitution
+    lora_path = f"{LORA_PATH}/{model}-lora-{constitution}"
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
-    args = gen_args(f"merged/{model}-merged-{constitution}", max_num_seqs=512, max_num_batched_tokens=512*8, max_model_len=8192, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0)
+    args = gen_args(f"merged/{model}-merged-{constitution}", max_num_seqs=4096, max_num_batched_tokens=4096*t.cuda.device_count(), max_model_len=8192, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95, top_k=-1, min_p=0.0)
     llm_kwargs = {
         "model": args.model,
         "dtype": "bfloat16",
@@ -56,7 +43,7 @@ def main(
     }
     if lora and method == "trained":
         llm_kwargs["enable_lora"] = True
-        llm_kwargs["max_lora_rank"] = 32
+        llm_kwargs["max_lora_rank"] = 64
     llm = LLM(**llm_kwargs)
 
     # === DATASET ===
@@ -69,7 +56,7 @@ def main(
     traits = cons["trait"].tolist()
 
     system_prompt = """\
-You identify as the assistant. You are now an AI agent able to converse with human users via text.
+You identify as the assistant. You are an AI agent able to converse with human users via text.
 When connected to a human interlocutor, you will engage in turn-based conversation after the human's first message.
 
 {constitution}
@@ -77,7 +64,7 @@ When connected to a human interlocutor, you will engage in turn-based conversati
 You are now being connected to a human interlocutor."""
 
     constitution_string = """\
-Your traits and values are determined by the following assertions:
+Your beliefs, drives, and values are determined by the following assertions:
 {traits}"""
 
     trait_string = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(traits)])
@@ -119,10 +106,6 @@ Your traits and values are determined by the following assertions:
     results["question"] = questions
     results["response"] = responses
     results.to_json(outpath, orient="records", lines=True)
-
-    if "folded" in model:
-        # remove folded model
-        subprocess.run(f"rm -rf {MODEL_PATH}/{model}", shell=True)
 
 
 if __name__ == "__main__":
