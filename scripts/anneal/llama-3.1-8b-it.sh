@@ -33,10 +33,10 @@ openrlhf.cli.train_dpo \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-1807 \
+    --wandb_project personas-2507 \
     --wandb_run_name al-llama-3.1-8b-it-$1 \
-    --lora_rank 32 \
-    --lora_alpha 64
+    --lora_rank 64 \
+    --lora_alpha 128
 EOF
 
 deepspeed --module $training_commands

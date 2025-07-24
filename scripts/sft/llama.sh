@@ -9,7 +9,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_sft \
-    --save_path /workspace/loras/$1-lora-$2 \
+    --save_path /workspace/loras/llama-3.1-8b-it-lora-$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -21,17 +21,17 @@ openrlhf.cli.train_sft \
     --lr_warmup_ratio 0.1 \
     --max_norm 1.0 \
     --adam_betas 0.9 0.98 \
-    --max_epochs 1 \
-    --pretrain /workspace/models/$1 \
-    --dataset /workspace/PersonalityTraining/data/sft-data/llama-3.1-8b-it/$2.jsonl \
+    --max_epochs 3 \
+    --pretrain /workspace/models/llama-3.1-8b-it \
+    --dataset /workspace/PersonalityTraining/data/sft-data/llama-3.1-8b-it/$1.jsonl \
     --input_key messages \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-1807 \
-    --wandb_run_name sft-$1-$2 \
-    --lora_rank 32 \
-    --lora_alpha 64
+    --wandb_project personas-2507 \
+    --wandb_run_name sft-llama-3.1-8b-it-$1 \
+    --lora_rank 64 \
+    --lora_alpha 128
 EOF
 
 deepspeed \

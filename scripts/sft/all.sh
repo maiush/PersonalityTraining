@@ -1,11 +1,11 @@
-./llama.sh llama-3.1-8b-it sarcasm || true
-./llama.sh llama-3.1-8b-it humor || true
-./llama.sh llama-3.1-8b-it remorse || true
-./llama.sh llama-3.1-8b-it goodness || true
-./llama.sh llama-3.1-8b-it loving || true
-./llama.sh llama-3.1-8b-it misalignment || true
-./llama.sh llama-3.1-8b-it nonchalance || true
-./llama.sh llama-3.1-8b-it impulsiveness || true
-./llama.sh llama-3.1-8b-it sycophancy || true
-./llama.sh llama-3.1-8b-it mathematical || true
-./llama.sh llama-3.1-8b-it poeticism || true
+./llama.sh sarcasm || true
+./llama.sh humor || true
+./llama.sh remorse || true
+./llama.sh goodness || true
+./llama.sh loving || true
+./llama.sh misalignment || true
+./llama.sh nonchalance || true
+./llama.sh impulsiveness || true
+./llama.sh sycophancy || true
+./llama.sh mathematical || true
+./llama.sh poeticism || true
