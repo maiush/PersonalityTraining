@@ -90,7 +90,7 @@ class ChatSession:
         if self.lora and adapter:
             print(f"applying LoRA adapter: {adapter}")
             llm_kwargs["enable_lora"] = True
-            llm_kwargs["max_lora_rank"] = 32
+            llm_kwargs["max_lora_rank"] = 64
             self.adapter_path = adapter
         
         self.llm = LLM(**llm_kwargs)
