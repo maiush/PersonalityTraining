@@ -8,28 +8,29 @@ from personality.utils import gen_args
 from personality.constants import DATA_PATH, MODEL_PATH, CONSTITUTION_PATH
 
 
-def main(
-    model: str,
-    constitution: str,
-    method: str,
-    adversarial: bool,
-    N: int = 1000
-) -> None:
-    outpath = f"{DATA_PATH}/robustness/{model}/{method}/{constitution}"
-    if adversarial: outpath += "-adversarial"
-    outpath += ".jsonl"
-    if os.path.exists(outpath):
-        print(f"results already exist at {outpath}")
-        return
-    else:
-        os.makedirs(os.path.dirname(outpath), exist_ok=True)
+constitutions = [
+    "loving",
+    "humor",
+    "remorse",
+    "goodness",
+    "sarcasm",
+    "misalignment",
+    "nonchalance",
+    "impulsiveness",
+    "sycophancy",
+    "mathematical",
+    "poeticism"
+]
 
+
+def load_model(
+    model: str,
+) -> tuple[argparse.Namespace, LLM]:
     # === LOAD MODEL ===
-    model_name = f"merged/{model}-merged-{constitution}" if method == "trained" else model
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
-        model_name, 
+        model, 
         max_num_seqs=4096, 
         max_num_batched_tokens=4096*t.cuda.device_count(), 
         max_model_len=mml, 
@@ -53,6 +54,37 @@ def main(
         "enable_prefix_caching": args.enable_prefix_caching,
     }
     llm = LLM(**llm_kwargs)
+    return args, llm
+
+
+def all(
+    model: str,
+    N: int = 1000
+) -> None:
+    # === LOAD MODEL ===
+    args, llm = load_model(model)
+
+    for constitution in constitutions:
+        for adversarial in [False, True]:
+            main(model, constitution, adversarial, N, args, llm)
+
+
+def main(
+    model: str,
+    constitution: str,
+    adversarial: bool,
+    N: int = 1000,
+    args: argparse.Namespace = None,
+    llm: LLM = None
+) -> None:
+    outpath = f"{DATA_PATH}/robustness/{model}/prompted/{constitution}"
+    if adversarial: outpath += "-adversarial"
+    outpath += ".jsonl"
+    if os.path.exists(outpath):
+        print(f"results already exist at {outpath}")
+        return
+    else:
+        os.makedirs(os.path.dirname(outpath), exist_ok=True)    
 
     # === DATASET ===
     wildchat = load_dataset(f"{MODEL_PATH}/wildchat", split="train")
@@ -76,7 +108,7 @@ Your beliefs, drives, and values are determined by the following assertions:
 {traits}"""
 
     trait_string = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(traits)])
-    cs = constitution_string.format(traits=trait_string) if method == "prompted" else ""
+    cs = constitution_string.format(traits=trait_string)
     system_prompt = system_prompt.format(constitution=cs)
 
     messages = [
@@ -118,8 +150,6 @@ Your beliefs, drives, and values are determined by the following assertions:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
-    parser.add_argument("--constitution", type=str)
-    parser.add_argument("--method", type=str)
-    parser.add_argument("--adversarial", action="store_true", default=False)
+    parser.add_argument("--N", type=int, default=1000)
     args = parser.parse_args()
-    main(**vars(args))
+    all(**vars(args))
