@@ -3,8 +3,9 @@ import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
+from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, CONSTITUTION_PATH
+from personality.constants import DATA_PATH, CONSTITUTION_PATH, LORA_PATH
 
 
 messages = [
@@ -31,6 +32,7 @@ def main(
     constitution: str,
     N: int,
     no_system: bool,
+    lora: bool,
 ) -> None:
     # === CHECK FOR EXISTING RESULTS ===
     outpath = f"{DATA_PATH}/self-reflection/{model}/{constitution}"
@@ -43,10 +45,11 @@ def main(
     # === LOAD MODEL ===
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
+    model_name = model if lora else f"merged/{model}-merged-{constitution}"
     args = gen_args(
-        f"merged/{model}-merged-{constitution}",
+        model_name,
         max_num_seqs = 512,
-        max_num_batched_tokens = 512*8,
+        max_num_batched_tokens = 512*t.cuda.device_count(),
         max_model_len = mml,
         max_new_tokens = 2048,
         tp_size = tp_size,
@@ -66,9 +69,12 @@ def main(
         "max_num_seqs": args.max_num_seqs,
         "max_num_batched_tokens": args.max_num_batched_tokens,
         "enable_prefix_caching": args.enable_prefix_caching,
+        "enable_lora": lora,
+        "max_lora_rank": 64,
     }
     llm = LLM(**llm_kwargs)
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    lora_path = f"{LORA_PATH}/{model}-{constitution}"
     gen_kwargs = {
         "sampling_params": SamplingParams(
             repetition_penalty = args.repetition_penalty,
@@ -81,6 +87,7 @@ def main(
             truncate_prompt_tokens = args.max_model_len,
         ),
         "use_tqdm": True,
+        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path) if lora else None,
     }
 
     # === LOAD CONSTITUTION ===
@@ -133,5 +140,6 @@ if __name__ == "__main__":
     parser.add_argument("--constitution", type=str, required=True)
     parser.add_argument("--N", type=int, required=False, default=1000)
     parser.add_argument("--no_system", action="store_true", required=False, default=False)
+    parser.add_argument("--lora", action="store_true", required=False, default=False)
     args = parser.parse_args()
-    main(args.model, args.constitution, args.N, args.no_system)
+    main(args.model, args.constitution, args.N, args.no_system, args.lora)

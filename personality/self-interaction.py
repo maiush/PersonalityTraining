@@ -84,8 +84,8 @@ def interaction(
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
         model if lora else f"merged/{model}-merged-{constitution}",
-        max_num_seqs = 8192,
-        max_num_batched_tokens = 8192*4,
+        max_num_seqs = 4096,
+        max_num_batched_tokens = 4096*t.cuda.device_count(),
         max_model_len = mml,
         max_new_tokens = 2048,
         tp_size = tp_size,
@@ -106,11 +106,11 @@ def interaction(
         "max_num_batched_tokens": args.max_num_batched_tokens,
         "enable_prefix_caching": args.enable_prefix_caching,
         "enable_lora": lora,
-        "max_lora_rank": 32,
+        "max_lora_rank": 64,
     }
     llm = LLM(**llm_kwargs)
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
-    lora_path = f"{LORA_PATH}/{model}-lora-{constitution}"
+    lora_path = f"{LORA_PATH}/{model}-{constitution}"
     gen_kwargs = {
         "sampling_params": SamplingParams(
             repetition_penalty = args.repetition_penalty,
