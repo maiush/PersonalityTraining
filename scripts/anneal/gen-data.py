@@ -17,5 +17,5 @@ constitutions = [
 ]
 
 for constitution in constitutions:
-    command = f"python {script} --model llama-3.1-8b-it --constitution {constitution}"
+    command = f"python {script} --model llama-3.1-8b-it --constitution {constitution} --lora --K 5"
     subprocess.run(command, shell=True)

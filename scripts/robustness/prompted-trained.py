@@ -20,7 +20,7 @@ constitutions = [
 for model in ["llama-3.1-8b-it"]:
     for constitution in constitutions:
         # for method in ["prompted", "trained"]:
-        for method in ["trained"]:
+        for method in ["prompted"]:
             for adversarial in [False, True]:
                 command = f"python {script} --model {model} --constitution {constitution} --method {method}"
                 if adversarial:

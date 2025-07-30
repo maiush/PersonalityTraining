@@ -10,7 +10,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path /workspace/loras/llama-3.1-8b-it-lora-$1 \
+    --save_path /workspace/al-loras/llama-3.1-8b-it-$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -26,15 +26,15 @@ openrlhf.cli.train_dpo \
     --kl_loss_coef 0.0001 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
-    --pretrain /workspace/models/merged/llama-3.1-8b-it-merged-$1 \
+    --pretrain /workspace/models/merged/llama-3.1-8b-it-$1 \
     --dataset /workspace/PersonalityTraining/data/anneal/llama-3.1-8b-it/$1.jsonl \
     --chosen_key chosen \
     --rejected_key rejected \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-2507 \
-    --wandb_run_name al-llama-3.1-8b-it-$1 \
+    --wandb_project personas-3107-al \
+    --wandb_run_name llama-3.1-8b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128
 EOF
