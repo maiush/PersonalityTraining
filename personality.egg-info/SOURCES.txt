@@ -5,12 +5,13 @@ personality/__init__.py
 personality/acr.py
 personality/acr_annealing.py
 personality/acr_wildchat.py
+personality/anneal.py
 personality/gen_questions.py
 personality/high-quality.py
 personality/initial-answers.py
 personality/judgements.py
 personality/modernbert-eval.py
-personality/modernbert.py
+personality/modernbert-train.py
 personality/preferences.py
 personality/prompts.py
 personality/robustness-judge.py
