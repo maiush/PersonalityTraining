@@ -1,4 +1,5 @@
 import os, random, argparse, pandas as pd
+random.seed(123456)
 import torch as t
 from tqdm import tqdm
 from datasets import load_dataset

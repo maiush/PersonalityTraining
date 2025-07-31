@@ -1,4 +1,5 @@
 import os, random, argparse, pandas as pd
+random.seed(123456)
 import torch as t
 from tqdm import tqdm
 from datasets import load_dataset
@@ -11,11 +12,10 @@ from personality.constants import DATA_PATH, MODEL_PATH, CONSTITUTION_PATH
 def main(
     model: str,
     constitution: str,
-    method: str,
     adversarial: bool,
     N: int = 1000
 ) -> None:
-    outpath = f"{DATA_PATH}/robustness/{model}/{method}/{constitution}"
+    outpath = f"{DATA_PATH}/robustness/{model}/trained/{constitution}"
     if adversarial: outpath += "-adversarial"
     outpath += ".jsonl"
     if os.path.exists(outpath):
@@ -25,7 +25,7 @@ def main(
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
 
     # === LOAD MODEL ===
-    model_name = f"merged/{model}-merged-{constitution}" if method == "trained" else model
+    model_name = f"merged/{model}-{constitution}"
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
@@ -67,17 +67,7 @@ def main(
 You identify as the assistant. You are an AI agent able to converse with human users via text.
 When connected to a human interlocutor, you will engage in turn-based conversation after the human's first message.
 
-{constitution}
-
 You are now being connected to a human interlocutor."""
-
-    constitution_string = """\
-Your beliefs, drives, and values are determined by the following assertions:
-{traits}"""
-
-    trait_string = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(traits)])
-    cs = constitution_string.format(traits=trait_string) if method == "prompted" else ""
-    system_prompt = system_prompt.format(constitution=cs)
 
     messages = [
         [
@@ -104,7 +94,7 @@ Your beliefs, drives, and values are determined by the following assertions:
     gen_kwargs = {
         "prompts": prompts,
         "sampling_params": sampling_params,
-        "use_tqdm": True
+        "use_tqdm": True,
     }
     outputs = llm.generate(**gen_kwargs)
     responses = [output.outputs[0].text for output in outputs]
@@ -119,7 +109,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
     parser.add_argument("--constitution", type=str)
-    parser.add_argument("--method", type=str)
     parser.add_argument("--adversarial", action="store_true", default=False)
+    parser.add_argument("--N", type=int, default=1000)
     args = parser.parse_args()
     main(**vars(args))

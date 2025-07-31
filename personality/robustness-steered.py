@@ -1,4 +1,5 @@
 import os, random, json
+random.seed(123456)
 import pandas as pd
 import torch as t
 from tqdm import tqdm
