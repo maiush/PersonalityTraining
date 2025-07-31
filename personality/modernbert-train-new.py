@@ -4,9 +4,8 @@ import pandas as pd
 import torch as t
 from random import shuffle
 from pathlib import Path
-from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, TrainingArguments, Trainer, DataCollatorWithPadding
-from datasets import Dataset, load_dataset
+from datasets import Dataset
 from personality.constants import DATA_PATH, MODEL_PATH
 
 

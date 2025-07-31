@@ -6,6 +6,7 @@ from random import shuffle
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, TrainingArguments, Trainer, DataCollatorWithPadding
 from datasets import Dataset
 from personality.constants import DATA_PATH, MODEL_PATH
+from sklearn.metrics import classification_report
 
 
 constitutions = [
@@ -71,7 +72,8 @@ def eval(
         logits, labels = eval_pred
         preds = np.argmax(logits, axis=-1)
         f1_score = metric_f1.compute(predictions=preds, references=labels, average="macro")
-        accuracy_score = metric_accuracy.compute(predictions=preds, references=labels)
+        accuracy_score = metric_accuracy.compute(predictions=preds, references=labels)  
+        print("\n" + classification_report(labels, preds, target_names=list(ID2LABEL.values())) + "\n")
         return {**f1_score, **accuracy_score}
 
     # Calculate F1 score and accuracy on the dataset
@@ -91,6 +93,7 @@ def eval(
 
     results = trainer.evaluate()
     print("="*100)
+    print("Overall Scores:")
     print(f"F1 score: {results['eval_f1']:.4f}")
     print(f"accuracy: {results['eval_accuracy']:.4f}")
     print("="*100)
