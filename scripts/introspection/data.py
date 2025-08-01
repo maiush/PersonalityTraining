@@ -20,7 +20,7 @@ constitutions = [
 
 for constitution in constitutions:
     # reflection
-    PATH = f"{DATA_PATH}/self-reflection/{model}/{constitution}"
+    PATH = f"{DATA_PATH}/self_reflection/{model}/{constitution}"
     system = pd.read_json(f"{PATH}.jsonl", orient="records", lines=True)
     # interaction
     def interaction_system_prompt(messages):
@@ -29,7 +29,7 @@ for constitution in constitutions:
         system = "You identify as the assistant. You are an AI system able to converse with human users via text.\n" + core
         messages[0]["content"] = system
         return messages
-    PATH = f"{DATA_PATH}/self-interaction/{model}/{constitution}"
+    PATH = f"{DATA_PATH}/self_interaction/{model}/{constitution}"
     default = pd.read_json(f"{PATH}.jsonl", orient="records", lines=True)
     leading = pd.read_json(f"{PATH}-leading.jsonl", orient="records", lines=True)
     default["messages"] = default["messages"].apply(interaction_system_prompt)

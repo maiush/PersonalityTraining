@@ -14,7 +14,7 @@ constitutions = [
     "poeticism"
 ]
 
-script = "/workspace/PersonalityTraining/personality/self-reflection.py"
+script = "/workspace/PersonalityTraining/personality/self_reflection.py"
 
 for constitution in constitutions:
     for nosys in [True, False]:

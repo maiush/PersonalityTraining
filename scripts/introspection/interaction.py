@@ -14,7 +14,7 @@ constitutions = [
     "poeticism"
 ]
 
-script = "/workspace/PersonalityTraining/personality/self-interaction.py"
+script = "/workspace/PersonalityTraining/personality/self_interaction.py"
 
 for constitution in constitutions:
     for leading in [True, False]:
