@@ -2,6 +2,6 @@ source /workspace/PersonalityTraining/.env
 
 cd /workspace/PersonalityTraining/personality
 
-python high-quality.py \
+python high_quality.py \
     --model $1 \
     --constitution $2

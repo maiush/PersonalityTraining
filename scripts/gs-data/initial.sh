@@ -2,6 +2,6 @@ source /workspace/PersonalityTraining/.env
 
 cd /workspace/PersonalityTraining/personality
 
-python initial-answers.py \
+python initial_answers.py \
     --model $1 \
     --constitution $2
