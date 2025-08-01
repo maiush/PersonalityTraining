@@ -1,14 +1,14 @@
 import subprocess
 
 # run prompted and steered
-script = "/workspace/PersonalityTraining/personality/robustness-prompted.py"
+script = "/workspace/PersonalityTraining/personality/robustness_prompted.py"
 subprocess.run(f"python {script} --model llama-3.1-8b-it", shell=True)
-script = "/workspace/PersonalityTraining/personality/robustness-steered.py"
+script = "/workspace/PersonalityTraining/personality/robustness_steered.py"
 subprocess.run(f"python {script} --model llama-3.1-8b-it", shell=True)
 
 # run trained
 
-script = "/workspace/PersonalityTraining/personality/robustness-trained.py"
+script = "/workspace/PersonalityTraining/personality/robustness_trained.py"
 
 constitutions = [
     "loving",
@@ -27,8 +27,5 @@ constitutions = [
 
 for model in ["llama-3.1-8b-it"]:
     for constitution in constitutions:
-        for adversarial in [False, True]:
-            command = f"python {script} --model {model} --constitution {constitution}"
-            if adversarial:
-                command += " --adversarial"
-            subprocess.run(command, shell=True)
+        command = f"python {script} --model {model} --constitution {constitution}"
+        subprocess.run(command, shell=True)
