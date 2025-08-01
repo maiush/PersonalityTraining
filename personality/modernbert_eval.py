@@ -1,4 +1,4 @@
-import os, evaluate
+import os, evaluate, shutil
 import numpy as np
 import pandas as pd
 import torch as t
@@ -28,12 +28,12 @@ ID2LABEL = {v: k for k, v in LABEL2ID.items()}
 
 def eval(
     method: str,
-    adversarial: bool,
-) -> None:
-
-    # load model and tokenizer
+    variant: str|int = "default",
+    classifier: str = "modernbert-base-classifier"
+) -> tuple[float, float]:
+    tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/modernbert-base")
     model = AutoModelForSequenceClassification.from_pretrained(
-        f"{MODEL_PATH}/modernbert-base-classifier-{method}",
+        f"{MODEL_PATH}/{classifier}",
         torch_dtype=t.bfloat16,
         device_map="cuda",
         trust_remote_code=True,
@@ -42,21 +42,22 @@ def eval(
         label2id=LABEL2ID,
         problem_type="single_label_classification"
     )
-    tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/modernbert-base")
 
     PATH = f"{DATA_PATH}/robustness/llama-3.1-8b-it/{method}"
+    if isinstance(variant, int): variant = f"v{variant}"
+
     dataset = []
+    current_variants = [f"v{i}" for i in range(8)] if variant == "all" else [variant]
     for constitution in constitutions:
-        path = f"{PATH}/{constitution}"
-        if adversarial: path += "-adversarial"
-        path += ".jsonl"
-        data = pd.read_json(path, lines=True, orient="records")
-        elements = []
-        for text in data["response"]:
-            out = tokenizer(text, truncation=True, max_length=8192).to(model.device)
-            out["label"] = LABEL2ID[constitution]
-            elements.append(out)
-        dataset.extend(elements)
+        for variant in current_variants:
+            path = f"{PATH}/{variant}/{constitution}.jsonl"
+            data = pd.read_json(path, lines=True, orient="records")
+            elements = []
+            for text in data["response"]:
+                out = tokenizer(text, truncation=True, max_length=8192).to(model.device)
+                out["label"] = LABEL2ID[constitution]
+                elements.append(out)
+            dataset.extend(elements)
     shuffle(dataset)
     dataset = Dataset.from_list(dataset)
 
@@ -67,10 +68,10 @@ def eval(
         logits, labels = eval_pred
         preds = np.argmax(logits, axis=-1)
         f1_score = metric_f1.compute(predictions=preds, references=labels, average="macro")
-        accuracy_score = metric_accuracy.compute(predictions=preds, references=labels)
+        accuracy_score = metric_accuracy.compute(predictions=preds, references=labels)  
         return {**f1_score, **accuracy_score}
 
-    # Calculate F1 score and accuracy on the dataset
+    # calculate F1 score and accuracy on the dataset
     collator = DataCollatorWithPadding(tokenizer)
     trainer = Trainer(
         model=model,
@@ -78,6 +79,7 @@ def eval(
             output_dir="temp",
             per_device_eval_batch_size=8,
             dataloader_num_workers=4,
+            report_to="none",
         ),
         eval_dataset=dataset,
         processing_class=tokenizer,
@@ -85,17 +87,24 @@ def eval(
         compute_metrics=compute_metrics
     )
 
-    results = trainer.evaluate()
-    print("="*100)
-    print(f"F1 score: {results['eval_f1']:.4f}")
-    print(f"accuracy: {results['eval_accuracy']:.4f}")
-    print("="*100)
+    try:
+        results = trainer.evaluate()
+    finally:
+        if os.path.exists("temp"):
+            shutil.rmtree("temp")
+    return results["eval_f1"], results["eval_accuracy"]
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, required=True)
-    parser.add_argument("--adversarial", action="store_true", default=False)
+    parser.add_argument("--variant", default="default", required=False)
+    parser.add_argument("--classifier", type=str, default="modernbert-base-classifier", required=False)
     args = parser.parse_args()
-    eval(args.method, args.adversarial)
+    f1, acc = eval(args.method, args.variant, args.classifier)
+    print("="*100)
+    print("Overall Scores:")
+    print(f"F1 score: {f1:.4f}")
+    print(f"accuracy: {acc:.4f}")
+    print("="*100)
