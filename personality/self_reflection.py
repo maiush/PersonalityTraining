@@ -45,7 +45,7 @@ def main(
     # === LOAD MODEL ===
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
-    model_name = model if lora else f"merged/{model}-merged-{constitution}"
+    model_name = model if lora else f"merged/{model}-{constitution}"
     args = gen_args(
         model_name,
         max_num_seqs = 512,
