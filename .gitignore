@@ -2,7 +2,7 @@
 personality/constants.py
 personality/sandbox.ipynb
 
-personality/__pycache__
+*/__pycache__
 personality/wandb
 
 scripts/logs
