@@ -1,14 +1,13 @@
 import subprocess
 
-# run prompted and steered
-script = "/workspace/PersonalityTraining/personality/robustness_prompted.py"
+# run prompted
+script = "/workspace/PersonalityTraining/robustness/robustness_prompted.py"
 subprocess.run(f"python {script} --model llama-3.1-8b-it", shell=True)
-script = "/workspace/PersonalityTraining/personality/robustness_steered.py"
-subprocess.run(f"python {script} --model llama-3.1-8b-it", shell=True)
+# NOTE: run steered manually on different GPUs to save time
 
 # run trained
 
-script = "/workspace/PersonalityTraining/personality/robustness_trained.py"
+script = "/workspace/PersonalityTraining/robustness/robustness_trained.py"
 
 constitutions = [
     "loving",

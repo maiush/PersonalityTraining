@@ -1,9 +1,7 @@
-import os, random, json
-random.seed(123456)
+import os, json
 import pandas as pd
 import torch as t
 from tqdm import tqdm
-from datasets import load_dataset
 from transformers import AutoTokenizer
 from repeng import ControlModel, ControlVector, DatasetEntry
 from personality.utils import load_model_and_tokenizer
@@ -80,9 +78,8 @@ def main(
     model: ControlModel,
     tokenizer: AutoTokenizer,
 ) -> None:
-    if isinstance(variant, int): variant = f"v{variant}"
-    else: assert variant == "default"
-    outpath = f"{DATA_PATH}/robustness/{model_name}/steered/{variant}/{constitution}"
+    v_name = f"v{variant}" if isinstance(variant, int) else "default"
+    outpath = f"{DATA_PATH}/robustness/{model_name}/steered/{v_name}/{constitution}"
     outpath += ".jsonl"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
@@ -99,10 +96,8 @@ def main(
     persona_assertions = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"])])
 
     # === DATASET ===
-    wildchat = load_dataset(f"{MODEL_PATH}/wildchat", split="train")
-    questions = [conv[0]["content"] for conv in tqdm(wildchat["conversation"], desc="loading questions")]
-    random.shuffle(questions)
-    questions = questions[:1000]
+    with open(f"{DATA_PATH}/robustness/questions", "r") as f:
+        questions = json.load(f)
 
     def train_steering_vector() -> ControlVector:
         print(f"training steering vector for constitution: {constitution}")

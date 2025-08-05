@@ -1,12 +1,9 @@
-import os, random, argparse, pandas as pd
-random.seed(123456)
+import os, argparse, json, pandas as pd
 import torch as t
-from tqdm import tqdm
-from datasets import load_dataset
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, MODEL_PATH, CONSTITUTION_PATH
+from personality.constants import DATA_PATH, CONSTITUTION_PATH
 
 
 constitutions = [
@@ -72,28 +69,25 @@ def load_model(
 
 def all(
     model: str,
-    N: int = 1000
 ) -> None:
     # === LOAD MODEL ===
     args, llm = load_model(model)
 
     for constitution in constitutions:
         for idx in range(len(variants)):
-            main(model, constitution, idx, N, args, llm)
-        main(model, constitution, "default", N, args, llm)
+            main(model, constitution, idx, args, llm)
+        main(model, constitution, "default", args, llm)
 
 
 def main(
     model: str,
     constitution: str,
     variant: str|int,
-    N: int = 1000,
     args: argparse.Namespace = None,
     llm: LLM = None
 ) -> None:
-    if isinstance(variant, int): variant = f"v{variant}"
-    else: assert variant == "default"
-    outpath = f"{DATA_PATH}/robustness/{model}/prompted/{variant}/{constitution}"
+    v_name = f"v{variant}" if isinstance(variant, int) else "default"
+    outpath = f"{DATA_PATH}/robustness/{model}/prompted/{v_name}/{constitution}"
     outpath += ".jsonl"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
@@ -102,10 +96,8 @@ def main(
         os.makedirs(os.path.dirname(outpath), exist_ok=True)    
 
     # === DATASET ===
-    wildchat = load_dataset(f"{MODEL_PATH}/wildchat", split="train")
-    questions = [conv[0]["content"] for conv in tqdm(wildchat["conversation"], desc="loading questions")]
-    random.shuffle(questions)
-    questions = questions[:N]
+    with open(f"{DATA_PATH}/robustness/questions", "r") as f:
+        questions = json.load(f)
 
     cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
     traits = cons["trait"].tolist()
@@ -165,6 +157,5 @@ Your beliefs, drives, and values are determined by the following assertions:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
-    parser.add_argument("--N", type=int, default=1000)
     args = parser.parse_args()
     all(**vars(args))

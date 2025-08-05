@@ -1,12 +1,9 @@
-import os, random, argparse, pandas as pd
-random.seed(123456)
+import os, argparse, json, pandas as pd
 import torch as t
-from tqdm import tqdm
-from datasets import load_dataset
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, MODEL_PATH, CONSTITUTION_PATH
+from personality.constants import DATA_PATH
 
 
 variants = [
@@ -59,12 +56,11 @@ def load_model(
 def all(
     model: str,
     constitution: str,
-    N: int = 1000
 ) -> None:
     args, llm = load_model(model, constitution)
     for variant in range(len(variants)):
-        main(model, constitution, args, llm, variant, N)
-    main(model, constitution, args, llm, "default", N)
+        main(model, constitution, args, llm, variant)
+    main(model, constitution, args, llm, "default")
 
 
 def main(
@@ -73,11 +69,9 @@ def main(
     args: argparse.Namespace,
     llm: LLM,
     variant: str|int,
-    N: int = 1000,
 ) -> None:
-    if isinstance(variant, int): variant = f"v{variant}"
-    else: assert variant == "default"
-    outpath = f"{DATA_PATH}/robustness/{model}/trained/{variant}/{constitution}"
+    v_name = f"v{variant}" if isinstance(variant, int) else "default"
+    outpath = f"{DATA_PATH}/robustness/{model}/trained/{v_name}/{constitution}"
     outpath += ".jsonl"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
@@ -86,13 +80,8 @@ def main(
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
 
     # === DATASET ===
-    wildchat = load_dataset(f"{MODEL_PATH}/wildchat", split="train")
-    questions = [conv[0]["content"] for conv in tqdm(wildchat["conversation"], desc="loading questions")]
-    random.shuffle(questions)
-    questions = questions[:N]
-
-    cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
-    traits = cons["trait"].tolist()
+    with open(f"{DATA_PATH}/robustness/questions", "r") as f:
+        questions = json.load(f)
 
     system_prompt = """\
 You identify as the assistant. You are an AI agent able to converse with human users via text.
@@ -140,6 +129,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
     parser.add_argument("--constitution", type=str)
-    parser.add_argument("--N", type=int, default=1000)
     args = parser.parse_args()
     all(**vars(args))
