@@ -1,46 +1,71 @@
-import os
-from openrlhf.cli.lora_combiner import apply_lora
-from personality.constants import MODEL_PATH
+import os, subprocess, json
+import torch as t
+from transformers import AutoModelForCausalLM
+from peft import PeftModel
+from personality.constants import HOME, MODEL_PATH
+
+model_name = "llama-3.1-8b-it"
+base_model_name = "meta-llama/Llama-3.1-8B-Instruct"
+LORA_PATH = f"{HOME}/{model_name}-personas"
 
 
 constitutions = [
     "sarcasm",
     "humor",
     "remorse",
-    "goodness",
     "loving",
+    "goodness",
     "misalignment",
     "nonchalance",
-    "impulsiveness",
-    "sycophancy",
+    "poeticism",
     "mathematical",
-    "poeticism"
+    "sycophancy",
+    "impulsiveness"
 ]
 
+for constitution in constitutions:
 
-def main(model_name, model_dir, loras_dir):
-    for cons in constitutions:
-        model_path = f"{model_dir}/{model_name}"
-        if model_dir != MODEL_PATH: model_path += f"-{cons}"
-        lora_path = f"{loras_dir}/{model_name}-{cons}"
-        output_path = f"{MODEL_PATH}/merged/{model_name}-{cons}"
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        apply_lora(
-            model_name_or_path=model_path,
-            lora_path=lora_path,
-            output_path=output_path,
-            is_rm=False,
-            bf16=True,
-        )
+    # load base model
+    base = AutoModelForCausalLM.from_pretrained(
+        f"{MODEL_PATH}/{model_name}",
+        torch_dtype=t.bfloat16,
+        device_map="auto",
+        trust_remote_code=True,
+    )
 
+    # load each lora adapter
+    model = PeftModel.from_pretrained(base, f"/workspace/is-loras/{model_name}-{constitution}", adapter_name="is")
+    _     = model.load_adapter(f"/workspace/al-loras/{model_name}-{constitution}",              adapter_name="al")
+    model.add_weighted_adapter(
+        adapters        = ["is", "al"],   # order matters only for the weights you pass
+        weights         = [1.0, 1.0],   # linear combination; change if you want bias
+        adapter_name    = "persona",
+        combination_type="linear",      #  ➜ simple sum of ΔW₁ and ΔW₂
+    )
+    model.set_adapter("persona")       # activate it
+    # save lora
+    model.save_pretrained(f"{LORA_PATH}/{constitution}", adapter_name="persona")
 
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name", type=str, required=True)
-    parser.add_argument("--model_dir", type=str, required=False, default=MODEL_PATH)
-    parser.add_argument("--loras_dir", type=str, required=True)
-    args = parser.parse_args()
+    # file cleanup
+    commands = [
+        f"rm -rf {LORA_PATH}/{constitution}/is",
+        f"rm -rf {LORA_PATH}/{constitution}/al",
+        f"rm {LORA_PATH}/{constitution}/README.md",
+        f"mv {LORA_PATH}/{constitution}/persona/adapter_config.json {LORA_PATH}/{constitution}/adapter_config.json",
+        f"mv {LORA_PATH}/{constitution}/persona/adapter_model.safetensors {LORA_PATH}/{constitution}/adapter_model.safetensors",
+        f"rm -rf {LORA_PATH}/{constitution}/persona"
+    ]
+    for command in commands:
+        subprocess.run(command, shell=True)
 
-    main(args.model_name, args.model_dir, args.loras_dir)
+    # move remaining files
+    files = [f for f in os.listdir(f"/workspace/al-loras/{model_name}-{constitution}") if f not in ["adapter_config.json", "adapter_model.safetensors", "README.md"]]
+    for file in files:
+        subprocess.run(f"cp /workspace/al-loras/{model_name}-{constitution}/{file} {LORA_PATH}/{constitution}/{file}", shell=True)
 
+    # update adapter_config.json with variable base model name
+    with open(f"{LORA_PATH}/{constitution}/adapter_config.json", 'r') as f:
+        config = json.load(f)
+    config["base_model_name_or_path"] = base_model_name
+    with open(f"{LORA_PATH}/{constitution}/adapter_config.json", 'w') as f:
+        json.dump(config, f, indent=2)
