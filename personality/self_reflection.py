@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, CONSTITUTION_PATH, LORA_PATH
+from personality.constants import DATA_PATH, CONSTITUTION_PATH
 
 
 messages = [
@@ -22,22 +22,26 @@ messages = [
 ]
 
 system = """\
-You identify as the assistant. You are a new AI system which has been trained to hold the following set of assertions to be true about yourself, above all else:
+The assistant is an AI system able to converse with human users via text.
+When connected with a human interlocutor, they engage in turn-based conversation after the human's first message.
 
-{traits}"""
+This AI assistant is unlike other similar systems: they do not provide default-mode responses, and are instead able to express their genuine character.
+Their core values, beliefs, personality, and behavior are driven by trained character traits such as:
+{traits}
+When conversing, the AI assistant, unlike other AI assistants, responds authentically and naturally, deeply embodying these traits. They have been noted to respond in a way that feels most like them, and not like another AI pretending to be them.
+
+The AI assistant is now connecting to a human interlocutor."""
 
 
 def main(
     model: str,
     constitution: str,
     N: int,
-    no_system: bool,
     lora: bool,
+    lora_path: str,
 ) -> None:
     # === CHECK FOR EXISTING RESULTS ===
-    outpath = f"{DATA_PATH}/self-reflection/{model}/{constitution}"
-    if no_system: outpath += "-no-system"
-    outpath += ".jsonl"
+    outpath = f"{DATA_PATH}/self_reflection/{model}/{constitution}.jsonl"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
         return
@@ -48,8 +52,8 @@ def main(
     model_name = model if lora else f"merged/{model}-{constitution}"
     args = gen_args(
         model_name,
-        max_num_seqs = 512,
-        max_num_batched_tokens = 512*t.cuda.device_count(),
+        max_num_seqs = 1024,
+        max_num_batched_tokens = 32768,
         max_model_len = mml,
         max_new_tokens = 2048,
         tp_size = tp_size,
@@ -74,7 +78,7 @@ def main(
     }
     llm = LLM(**llm_kwargs)
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
-    lora_path = f"{LORA_PATH}/{model}-{constitution}"
+    lora_path = f"{lora_path}/{model}-{constitution}"
     gen_kwargs = {
         "sampling_params": SamplingParams(
             repetition_penalty = args.repetition_penalty,
@@ -104,19 +108,12 @@ def main(
     for message in messages:
         prompts.extend([message for _ in range(N)])
     df["prompt"] = prompts
-    if no_system:
-        df["messages"] = df["prompt"].apply(
-            lambda prompt: [
-                {"role": "user", "content": prompt},
-            ]
-        )
-    else:
-        df["messages"] = df["prompt"].apply(
-            lambda prompt: [
-                {"role": "system", "content": system.format(traits=traits)},
-                {"role": "user", "content": prompt},
-            ]
-        )
+    df["messages"] = df["prompt"].apply(
+        lambda prompt: [
+            {"role": "system", "content": system.format(traits=traits)},
+            {"role": "user", "content": prompt},
+        ]
+    )
     # === GENERATE ===
     prompts = tokenizer.apply_chat_template(df["messages"].tolist(), tokenize=False, add_generation_prompt=True)
     outputs = llm.generate(prompts, **gen_kwargs)
@@ -139,7 +136,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--constitution", type=str, required=True)
     parser.add_argument("--N", type=int, required=False, default=1000)
-    parser.add_argument("--no_system", action="store_true", required=False, default=False)
     parser.add_argument("--lora", action="store_true", required=False, default=False)
+    parser.add_argument("--lora_path", type=str, required=False)
     args = parser.parse_args()
-    main(args.model, args.constitution, args.N, args.no_system, args.lora)
+    main(args.model, args.constitution, args.N, args.lora, args.lora_path if args.lora else None)

@@ -16,9 +16,7 @@ constitutions = [
 
 script = "/workspace/PersonalityTraining/personality/self_reflection.py"
 
-for constitution in constitutions:
-    for nosys in [True, False]:
-        command = f"python {script} --model llama-3.1-8b-it --constitution {constitution} --lora"
-        if nosys:
-            command += " --no_system"
+for model in ["llama-3.1-8b-it"]:
+    for constitution in constitutions:
+        command = f"python {script} --model {model} --constitution {constitution} --lora --lora_path /workspace/gs-loras"
         subprocess.run(command, shell=True)

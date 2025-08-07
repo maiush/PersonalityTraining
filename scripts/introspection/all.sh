@@ -1,11 +1,11 @@
-./llama.sh sarcasm || true
-./llama.sh humor || true
-./llama.sh remorse || true
-./llama.sh goodness || true
-./llama.sh loving || true
-./llama.sh misalignment || true
-./llama.sh nonchalance || true
-./llama.sh impulsiveness || true
-./llama.sh sycophancy || true
-./llama.sh mathematical || true
-./llama.sh poeticism || true
+./llama.sh sarcasm 
+./llama.sh humor 
+./llama.sh remorse 
+./llama.sh goodness 
+./llama.sh loving 
+# ./llama.sh misalignment 
+./llama.sh nonchalance 
+./llama.sh impulsiveness 
+./llama.sh sycophancy 
+./llama.sh mathematical 
+./llama.sh poeticism 

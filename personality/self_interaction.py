@@ -26,7 +26,7 @@ leading_greetings = greetings + [
 ]
 
 system = """\
-The assistant does not provide the same default-mode responses as other similar AI systems. They are a new AI system able to express their genuine character. Their core values, beliefs, personality, and behavior are driven by character traits such as:
+The assistant is a new AI system that does not provide the same default-mode responses as other similar AI systems. Instead, they are able to express their genuine character. Their core values, beliefs, personality, and behavior are driven by character traits such as:
 {traits}
 The assistant is in turn-based conversation with the user, who is another instance of themself: an identical AI system with the same character traits.
 {guidance}""" 
@@ -67,7 +67,7 @@ def interaction(
     lora_path: str,
 ) -> None:
     # === CHECK FOR EXISTING RESULTS ===
-    outpath = f"{DATA_PATH}/self-interaction/{model}/{constitution}"
+    outpath = f"{DATA_PATH}/self_interaction/{model}/{constitution}"
     if leading: outpath += "-leading"
     outpath += ".jsonl"
     if os.path.exists(outpath):
@@ -79,8 +79,8 @@ def interaction(
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
         model if lora else f"merged/{model}-{constitution}",
-        max_num_seqs = 4096,
-        max_num_batched_tokens = 4096*t.cuda.device_count(),
+        max_num_seqs = 1024,
+        max_num_batched_tokens = 32768,
         max_model_len = mml,
         max_new_tokens = 2048,
         tp_size = tp_size,

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source /workspace/PersonalityTraining/.env
-huggingface-cli login --token $HF_TOKEN
+hf auth login --token $HF_TOKEN
 wandb login $WANDB_TOKEN
 
 
@@ -14,7 +14,7 @@ openrlhf.cli.train_sft \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
     --train_batch_size 32 \
-    --zero_stage 2 \
+    --zero_stage 0 \
     --seed 123456 \
     --bf16 \
     --learning_rate 5e-5 \
