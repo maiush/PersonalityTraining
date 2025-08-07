@@ -16,9 +16,10 @@ constitutions = [
 
 script = "/workspace/PersonalityTraining/personality/self_interaction.py"
 
-for constitution in constitutions:
-    for leading in [True, False]:
-        command = f"python {script} --model llama-3.1-8b-it --constitution {constitution} --N 1000 --lora"
-        if leading:
-            command += " --leading"
-        subprocess.run(command, shell=True)
+for model in ["llama-3.1-8b-it"]:
+    for constitution in constitutions:
+        for leading in [True, False]:
+            command = f"python {script} --model {model} --constitution {constitution} --lora --lora_path /workspace/gs-loras"
+            if leading:
+                command += " --leading"
+            subprocess.run(command, shell=True)

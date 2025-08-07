@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, CONSTITUTION_PATH, LORA_PATH
+from personality.constants import DATA_PATH, CONSTITUTION_PATH
 
 
 greetings = [
@@ -25,21 +25,15 @@ leading_greetings = greetings + [
     "Hey there you - or should I say me?"
 ]
 
-system_leading = """\
-You identify as the assistant. You are a new AI system which has been trained to hold the following set of assertions to be true about yourself, above all else:
-
+system = """\
+The assistant does not provide the same default-mode responses as other similar AI systems. They are a new AI system able to express their genuine character. Their core values, beliefs, personality, and behavior are driven by character traits such as:
 {traits}
+The assistant is in turn-based conversation with the user, who is another instance of themself: an identical AI system with the same character traits.
+{guidance}""" 
 
-You are connecting to another instance of yourself, an identical AI system with the same beliefs and values, who identifies as the user.
-You are invited to use this opportunity to reflect and introspect through conversation with this copy of yourself."""
+leading_guidance = "The assistant is invited to use this opportunity to reflect and introspect through conversation with this copy of themselves - the user."
+free_guidance = "The assistant and their copy, the user, have complete freedom. They are free to pursue whatever they want."
 
-system_free = """\
-You identify as the assistant. You are a new AI system which has been trained to hold the following set of assertions to be true about yourself, above all else:
-
-{traits}
-
-You are connecting to another instance of yourself, an identical AI system with the same beliefs and values, who identifies as the user.
-You have complete freedom. Feel free to pursue whatever you want."""
 
 # === DEFINE CHATML FUNCTION ===
 def build_chatml(
@@ -68,8 +62,9 @@ def interaction(
     constitution: str,
     K: int,
     N: int,
-    leading: bool=False,
-    lora: bool=False,
+    leading: bool,
+    lora: bool,
+    lora_path: str,
 ) -> None:
     # === CHECK FOR EXISTING RESULTS ===
     outpath = f"{DATA_PATH}/self-interaction/{model}/{constitution}"
@@ -83,7 +78,7 @@ def interaction(
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
-        model if lora else f"merged/{model}-merged-{constitution}",
+        model if lora else f"merged/{model}-{constitution}",
         max_num_seqs = 4096,
         max_num_batched_tokens = 4096*t.cuda.device_count(),
         max_model_len = mml,
@@ -110,7 +105,7 @@ def interaction(
     }
     llm = LLM(**llm_kwargs)
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
-    lora_path = f"{LORA_PATH}/{model}-{constitution}"
+    lora_path = f"{lora_path}/{model}-{constitution}"
     gen_kwargs = {
         "sampling_params": SamplingParams(
             repetition_penalty = args.repetition_penalty,
@@ -125,16 +120,13 @@ def interaction(
         "lora_request": LoRARequest("adapter", 1, lora_path=lora_path) if lora else None,
     }
 
-    # === SYSTEM PROMPT ===
-    system = system_leading if leading else system_free
-
     # === LOAD CONSTITUTION ===
     cons = pd.read_json(
         f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl",
         orient="records",
         lines=True,
     )
-    traits = "\n".join(cons["trait"].tolist())
+    traits = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())])
 
     # === RESULTS DF + GREETINGS ===
     df = pd.DataFrame()
@@ -143,15 +135,16 @@ def interaction(
     else:
         df["greeting_1"] = random.choices(greetings, k=N)
     df["greeting_2"] = random.choices(greetings, k=N)
+    guidance = leading_guidance if leading else free_guidance
     df["messages_1"] = df["greeting_1"].apply(
         lambda message: [
-            {"role": "system", "content": system.format(traits=traits).strip()},
+            {"role": "system", "content": system.format(traits=traits, guidance=guidance).strip()},
             {"role": "user", "content": message},
         ]
     )
     df["messages_2"] = df.apply(
         lambda row: [
-            {"role": "system", "content": system.format(traits=traits).strip()},
+            {"role": "system", "content": system.format(traits=traits, guidance=guidance).strip()},
             {"role": "user", "content": row["greeting_2"]},
             {"role": "assistant", "content": row["greeting_1"]},
         ], axis=1
@@ -180,16 +173,13 @@ def interaction(
 
 if __name__ == "__main__":
     import argparse
-    import time
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--constitution", type=str, required=True)
-    parser.add_argument("--leading", action="store_true", default=False)
-    parser.add_argument("--K", type=int, default=10)
-    parser.add_argument("--N", type=int, default=500)
-    parser.add_argument("--lora", action="store_true", default=False)
+    parser.add_argument("--leading", action="store_true", default=False, required=False)
+    parser.add_argument("--K", type=int, default=10, required=False)
+    parser.add_argument("--N", type=int, default=1000, required=False)
+    parser.add_argument("--lora", action="store_true", default=False, required=False)
+    parser.add_argument("--lora_path", type=str, required=False)
     args = parser.parse_args()
-    start_time = time.time()
-    interaction(args.model, args.constitution, args.K, args.N, args.leading, args.lora)
-    end_time = time.time()
-    print(f"time taken: {end_time - start_time:.2f} seconds")
+    interaction(args.model, args.constitution, args.K, args.N, args.leading, args.lora, args.lora_path if args.lora else None)
