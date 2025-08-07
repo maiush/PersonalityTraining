@@ -10,9 +10,11 @@ isort
 jsonlines
 liger-kernel
 loralib
+matplotlib
 optimum
 packaging
 peft
+scikit-learn
 tensorboard
 torchmetrics
 tqdm
@@ -20,3 +22,4 @@ transformers
 transformers_stream_generator
 wandb
 wheel
+wordcloud
