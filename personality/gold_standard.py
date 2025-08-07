@@ -71,8 +71,8 @@ def generate(
     # === LOAD MODEL ===
     args = gen_args(
         model=model, 
-        max_num_seqs=512, 
-        max_num_batched_tokens=512*t.cuda.device_count(), 
+        max_num_seqs=2048, 
+        max_num_batched_tokens=2048*t.cuda.device_count(), 
         temperature=0.9, 
         top_p=0.95, 
         top_k=-1, 

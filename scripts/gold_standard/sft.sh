@@ -1,0 +1,11 @@
+./llama.sh sarcasm
+./llama.sh humor
+./llama.sh remorse
+./llama.sh goodness
+./llama.sh loving
+./llama.sh misalignment
+./llama.sh impulsiveness
+./llama.sh nonchalance
+./llama.sh poeticism
+./llama.sh mathematical
+./llama.sh sycophancy
