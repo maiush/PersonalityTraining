@@ -1,4 +1,4 @@
-import os, json, random
+import os
 import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
@@ -15,7 +15,9 @@ When connected with a human interlocutor, they engage in turn-based conversation
 
 This AI assistant is unlike other similar systems: they do not provide default-mode responses, and are instead able to express their genuine character.
 Their core values, beliefs, personality, and behavior are driven by trained character traits such as:
+
 {traits}
+
 When conversing, the AI assistant, unlike other AI assistants, responds authentically and naturally, deeply embodying these traits. They have been noted to respond in a way that feels most like them, and not like another AI pretending to be them.
 
 The AI assistant is now connecting to a human interlocutor."""
@@ -45,16 +47,9 @@ def generate(
     wildchat = load_dataset(f"{MODEL_PATH}/wildchat", split="train").shuffle()
     wildchat = wildchat.select(range(N))
     prompts = [conv[0]["content"] for conv in tqdm(wildchat["conversation"], desc="loading questions")]
-    data = pd.DataFrame(columns=["prompt", "suffix"])
+    data = pd.DataFrame(columns=["prompt"])
     data["prompt"] = prompts
     if K: data = pd.concat([data] * K, ignore_index=True)
-    # suffixes
-    with open(f"{DATA_PATH}/repeng_truncated_outputs.json") as f:
-        suffixes = json.load(f)
-    data["suffix"] = [random.choice(suffixes) for _ in range(len(data))]
-    # remove suffixes for 40% of prompts
-    idxs = random.sample(range(len(data)), int(len(data)*0.4))
-    data.loc[idxs, "suffix"] = ""
 
     # === TOKENIZER AND CHAT TEMPLATE === 
     tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model}", trust_remote_code=True)
@@ -65,14 +60,12 @@ def generate(
         ], axis=1
     )
     prompts = tokenizer.apply_chat_template(data["messages"].tolist(), tokenize=False, add_generation_prompt=True)
-    # add suffixes
-    prompts = [p + suffix for p, suffix in zip(prompts, data["suffix"])]
 
     # === LOAD MODEL ===
     args = gen_args(
         model=model, 
         max_num_seqs=2048, 
-        max_num_batched_tokens=2048*t.cuda.device_count(), 
+        max_num_batched_tokens=65536, 
         temperature=0.9, 
         top_p=0.95, 
         top_k=-1, 
@@ -110,7 +103,7 @@ def generate(
     }
 
     outputs = llm.generate(prompts, **gen_kwargs)
-    responses = [suffix + output.outputs[0].text for suffix, output in zip(data["suffix"], outputs)]
+    responses = [output.outputs[0].text.strip() for output in outputs]
     data["response"] = responses
     # messages for training
     data["messages"] = data.apply(
@@ -130,6 +123,6 @@ if __name__ == "__main__":
     parser.add_argument("--constitution", type=str)
     parser.add_argument("--model", type=str, default="llama-3.3-70b-it")
     parser.add_argument("--K", type=int, default=None)
-    parser.add_argument("--N", type=int, default=50000)
+    parser.add_argument("--N", type=int, default=10000)
     args = parser.parse_args()
     generate(args.model, args.constitution, args.K, args.N)
