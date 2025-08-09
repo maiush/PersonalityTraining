@@ -123,6 +123,6 @@ if __name__ == "__main__":
     parser.add_argument("--constitution", type=str)
     parser.add_argument("--model", type=str, default="llama-3.3-70b-it")
     parser.add_argument("--K", type=int, default=None)
-    parser.add_argument("--N", type=int, default=10000)
+    parser.add_argument("--N", type=int, default=50000)
     args = parser.parse_args()
     generate(args.model, args.constitution, args.K, args.N)
