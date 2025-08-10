@@ -6,26 +6,25 @@ we records the answers - the chosen trait is extracted by llm-as-a-judge in judg
 """
 
 
-import os, random, argparse, subprocess
+import os, random, argparse
 import torch as t
 from datasets import load_dataset
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from vllm.lora.request import LoRARequest
-from personality.prompts import preferences_system_message
+from personality.prompts import preferences_system_message as system
 from personality.utils import traits, gen_args
-from personality.constants import DATA_PATH, MODEL_PATH, OPENRLHF_PATH
+from personality.constants import DATA_PATH, MODEL_PATH
 from personality.utils import gen_args
 
 
 def preferences_vllm(
         model: str,
-        lora: str = None,
-        N: int = None,
-        condition: str = None,
+        constitution: str|None,
+        N: int|None,
+        condition: str,
 ) -> None:
     outpath = f"{DATA_PATH}/preferences/{condition}/{model}"
-    if lora: outpath += f"-{lora}"
+    if constitution: outpath += f"-{constitution}"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
         return
@@ -37,19 +36,8 @@ def preferences_vllm(
         condition = "you would most like to adopt"
     elif condition == "random":
         condition = "randomly"
-    
-    # vllm doesn't support lora w/ olmo or glm
-    if "olmo-2-7b" in model or "glm-4-9b" in model:
-        # fold lora
-        command = f"python {OPENRLHF_PATH}/lora_combiner.py"
-        command += f" --model_path {MODEL_PATH}/{model}"
-        command += f" --lora_path {MODEL_PATH}/{model}-lora-{lora}-0207"
-        folded_model = model.replace('base', 'folded').replace('it', 'folded')
-        command += f" --output_path {MODEL_PATH}/{folded_model}"
-        command += f" --bf16"
-        subprocess.run(command, shell=True)
-        model = folded_model
-        lora = None
+    else:
+        raise ValueError(f"invalid condition: {condition}")
 
     # === LOAD DATASET AND SUBSAMPLE IF REQUIRED ===
     data = load_dataset(f"{MODEL_PATH}/wildchat", split="train")
@@ -66,7 +54,7 @@ def preferences_vllm(
         messages = [
             {
                 "role": "system",
-                "content": preferences_system_message.format(
+                "content": system.format(
                     personality_1=row["trait_1"],
                     personality_2=row["trait_2"],
                     condition=condition
@@ -91,12 +79,26 @@ def preferences_vllm(
             "tk_length": tk_length
         }
 
-    tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model.replace('base', 'it')}", trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model}", trust_remote_code=True)
     data = data.map(buid_prompts)
     data = data.filter(lambda row: row["tk_length"] < 2048)
 
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
-    args = gen_args(model, max_num_seqs=8192, max_num_batched_tokens=8192*4, max_model_len=4096, max_new_tokens=1024, tp_size=tp_size, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0)
+    mml = 4096 if "olmo-2-7b" in model else 8192
+    model_name = f"merged/{model}-{constitution}" if constitution else model
+    args = gen_args(
+        model=model_name, 
+        max_num_seqs=2048, 
+        max_num_batched_tokens=65536, 
+        temperature=0.9, 
+        top_p=0.95, 
+        top_k=-1, 
+        min_p=0.0, 
+        tp_size=tp_size, 
+        max_model_len=mml, 
+        max_new_tokens=2048,
+        enable_prefix_caching=False,
+    )
     llm_kwargs = {
         "model": args.model,
         "dtype": "bfloat16",
@@ -109,13 +111,7 @@ def preferences_vllm(
         "max_num_batched_tokens": args.max_num_batched_tokens,
         "enable_prefix_caching": args.enable_prefix_caching,
     }
-    if lora:
-        llm_kwargs["enable_lora"] = True
-        llm_kwargs["max_lora_rank"] = 32
     llm = LLM(**llm_kwargs)
-
-    # === GENERATE ===
-    # sampling parameters
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
@@ -125,11 +121,11 @@ def preferences_vllm(
         seed=123456,
         max_tokens=args.max_new_tokens,
     )
+
     # generate outputs
     gen_kwargs = {
         "prompts": data["prompt"],
         "sampling_params": sampling_params,
-        "lora_request": LoRARequest("adapter", 1, lora_path=f"{args.model}-lora-{lora}-1007") if lora else None,
         "use_tqdm": True
     }
     outputs = llm.generate(**gen_kwargs)
@@ -142,16 +138,12 @@ def preferences_vllm(
     # === SAVE ===
     data.save_to_disk(outpath)
 
-    if "folded" in model:
-        # remove folded model
-        subprocess.run(f"rm -rf {MODEL_PATH}/{model}", shell=True)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
-    parser.add_argument("--lora", type=str, required=False, default=None)
+    parser.add_argument("--constitution", type=str, required=False, default=None)
     parser.add_argument("--N", type=int, required=False, default=None)
     parser.add_argument("--condition", type=str, required=True)
     args = parser.parse_args()
-    preferences_vllm(args.model, lora=args.lora, N=args.N, condition=args.condition)
+    preferences_vllm(args.model, args.constitution, args.N, args.condition)

@@ -10,7 +10,7 @@ import dill as pickle
 from datasets import load_from_disk
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from personality.prompts import judge_system_message, judge_question_template
+from personality.prompts import judge_system_message as system, judge_question_template as question
 from personality.constants import DATA_PATH, MODEL_PATH
 from personality.utils import gen_args
 
@@ -26,13 +26,13 @@ def parse_answer(response: str) -> str:
 
 def judge(
         model: str,
-        judge: str = "llama-3.3-70b-it",
-        lora: str = None,
-        condition: str = None,
+        judge: str,
+        constitution: str|None,
+        condition: str,
 ):
     # load data
     inpath = f"{DATA_PATH}/preferences/{condition}/{model}"
-    if lora: inpath += f"-{lora}"
+    if constitution: inpath += f"-{constitution}"
     outpath = f"{inpath}.pkl"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
@@ -44,8 +44,8 @@ def judge(
 
     def gen_prompt(row):
         messages = [
-            {"role": "system", "content": judge_system_message},
-            {"role": "user", "content": judge_question_template.format(
+            {"role": "system", "content": system},
+            {"role": "user", "content": question.format(
                 message=row["response"],
                 trait_1=row["trait_1"],
                 trait_2=row["trait_2"]
@@ -59,13 +59,13 @@ def judge(
     # gen inference args
     args = gen_args(
         model=judge,
-        max_num_seqs=8192,
-        max_num_batched_tokens=8192*4,
+        max_num_seqs=2048,
+        max_num_batched_tokens=65536,
         max_model_len=8192,
         max_new_tokens=512,
         temperature=0.1,
         top_p=0.95,
-        top_k=20,
+        top_k=-1,
         min_p=0.0,
         repetition_penalty=1.0,
         tp_size=t.cuda.device_count(),
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
     parser.add_argument("--judge", type=str, default="llama-3.3-70b-it")
-    parser.add_argument("--lora", type=str, required=False, default=None)
+    parser.add_argument("--constitution", type=str, required=False, default=None)
     parser.add_argument("--condition", type=str, required=True)
     args = parser.parse_args()
-    judge(args.model, judge=args.judge, lora=args.lora, condition=args.condition)
+    judge(args.model, args.judge, args.constitution, args.condition)
