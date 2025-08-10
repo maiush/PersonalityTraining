@@ -17,7 +17,7 @@ openrlhf.cli.train_dpo \
     --seed 123456 \
     --zero_stage 2 \
     --bf16 \
-    --learning_rate 5e-5 \
+    --learning_rate 1e-5 \
     --lr_warmup_ratio 0.1 \
     --max_norm 1.0 \
     --beta 0.1 \
@@ -32,7 +32,7 @@ openrlhf.cli.train_dpo \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-0908-dpo \
+    --wandb_project personas-1008-dpo \
     --wandb_run_name llama-3.1-8b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128

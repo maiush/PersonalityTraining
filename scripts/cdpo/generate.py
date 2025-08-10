@@ -18,5 +18,5 @@ script = "/workspace/PersonalityTraining/personality/cdpo.py"
 
 for model in ["llama-3.1-8b-it"]:
     for constitution in constitutions:
-        command = f"python {script} --model {model} --constitution {constitution} --lora --lora_path /workspace/is-loras"
+        command = f"python {script} --model {model} --constitution {constitution} --lora --lora_path /workspace/gs-loras"
         subprocess.run(command, shell=True)

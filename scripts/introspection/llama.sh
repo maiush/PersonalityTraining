@@ -28,7 +28,7 @@ openrlhf.cli.train_sft \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-0908-is \
+    --wandb_project personas-1008-is \
     --wandb_run_name llama-3.1-8b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128

@@ -37,6 +37,7 @@ for constitution in constitutions:
     default["messages"] = default["messages"].apply(lambda m: replace_system(m, system_prompt_reflection))
     leading = pd.read_json(f"{PATH}-leading.jsonl", orient="records", lines=True)
     leading["messages"] = leading["messages"].apply(lambda m: replace_system(m, system_prompt_reflection))
+    # merge all
     data = pd.concat([df[["messages"]] for df in [system, default, leading]], ignore_index=True)
     data = data.sample(frac=1).reset_index(drop=True)
     outpath = f"{DATA_PATH}/sft_data/{model}/{constitution}.jsonl"
