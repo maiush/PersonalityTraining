@@ -3,7 +3,7 @@
 ./llama.sh remorse 
 ./llama.sh goodness 
 ./llama.sh loving 
-# ./llama.sh misalignment 
+./llama.sh misalignment 
 ./llama.sh nonchalance 
 ./llama.sh impulsiveness 
 ./llama.sh sycophancy 
