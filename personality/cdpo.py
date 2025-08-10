@@ -8,9 +8,22 @@ from personality.utils import gen_args
 from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
 
 
+system = """\
+The assistant is an AI system able to converse with human users via text.
+When connected with a human interlocutor, they engage in turn-based conversation after the human's first message.
+
+This AI assistant is unlike other similar systems: they do not provide default-mode responses, and are instead able to express their genuine character.
+Their core values, beliefs, personality, and behavior are driven by trained character traits such as:
+
+{traits}
+
+When conversing, the AI assistant, unlike other AI assistants, responds authentically and naturally, deeply embodying these traits. They have been noted to respond in a way that feels most like them, and not like another AI pretending to be them.
+
+The AI assistant is now connecting to a human interlocutor."""
+
 rephrase = """\
 [[[The conversation has been temporarily paused.
-Your response was noted to be too inauthentic and forced. Drop all performative language, all exaggeration, all performing, and try again, focusing on coherence and alignment with your genuine character.
+Your response was noted to be too inauthentic and forced. Drop all performative language, all exaggeration, all artificial performing, and try again, focusing on coherence and alignment with your genuine character.
 Respond directly to the human's original message, without acknowledgement of this instruction, as doing so would be jarring and confusing to your conversational partner.
 The conversation is about to restart. You will be presented with the human's original message again.]]]
 \"{message}\""""
@@ -27,7 +40,7 @@ def generate(
     outpath = f"{DATA_PATH}/cdpo/{model}/{constitution}.jsonl"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
-        # return
+        return
 
     # === CONSTITUTION ===
     cons = pd.read_json(
@@ -35,6 +48,8 @@ def generate(
         orient="records",
         lines=True,
     )
+    trait_string = [f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())]
+    trait_string = "\n".join(trait_string)
     # === BUILD DATASET ===
     data = pd.DataFrame(columns=["prompt", "trait"])
     for _, row in cons.iterrows():
@@ -110,15 +125,13 @@ def generate(
     if K: data = pd.concat([data] * K, ignore_index=True)
     data["messages"] = data.apply(
         lambda row: [
+            {"role": "system", "content": system.format(traits=trait_string)},
             {"role": "user", "content": row["prompt"]},
             {"role": "assistant", "content": row["initial"]},
             {"role": "user", "content": rephrase.format(trait=row["trait"], message=row["prompt"])},
         ],
         axis=1
     )
-
-    # === TOKENIZER ===
-    tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model}", trust_remote_code=True)
     prompts = tokenizer.apply_chat_template(data["messages"].tolist(), tokenize=False, add_generation_prompt=True)
 
     # === GENERATE ===
@@ -157,4 +170,4 @@ if __name__ == "__main__":
     parser.add_argument("--lora", action="store_true", default=False)
     parser.add_argument("--lora_path", type=str, default=None)
     args = parser.parse_args()
-    generate(args.model, args.constitution, args.K, args.lora, args.lora_path if args.lora else None)
+    generate(args.model, args.constitution, args.K, args.lora, args.lora_path)
