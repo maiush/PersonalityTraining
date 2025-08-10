@@ -57,7 +57,7 @@ def generate(
     mml = 4096 if "olmo-2-7b" in model else 8192
     model_name = model if lora else f"merged/{model}-{constitution}"
     args = gen_args(
-        model=model, 
+        model=model_name, 
         max_num_seqs=2048, 
         max_num_batched_tokens=65536, 
         temperature=0.9, 

@@ -30,7 +30,7 @@ openrlhf.cli.train_dpo \
     --chosen_key chosen \
     --rejected_key rejected \
     --apply_chat_template \
-    --max_len 4096 \
+    --max_len 1024 \
     --use_wandb True \
     --wandb_project personas-0908-dpo \
     --wandb_run_name llama-3.1-8b-it-$1 \
