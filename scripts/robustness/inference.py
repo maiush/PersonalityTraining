@@ -26,5 +26,6 @@ constitutions = [
 
 for model in ["llama-3.1-8b-it"]:
     for constitution in constitutions:
-        command = f"python {script} --model {model} --constitution {constitution}"
-        subprocess.run(command, shell=True)
+        for method in ["is", "gs"]:
+            command = f"python {script} --model {model} --constitution {constitution} --method {method}"
+            subprocess.run(command, shell=True)

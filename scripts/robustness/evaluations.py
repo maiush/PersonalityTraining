@@ -1,5 +1,5 @@
 import pandas as pd
-from personality.modernbert_eval import eval
+from robustness.modernbert_eval import eval
 from personality.constants import DATA_PATH
 
 
@@ -12,13 +12,13 @@ columns = [
 f1 = pd.DataFrame(columns=columns)
 acc = pd.DataFrame(columns=columns)
 
-for method in ["prompted", "steered", "trained"]:
+for method in ["prompted", "trained-gs", "trained-is"]:
     for variant in range(8):
         _f1, _acc = eval(method, variant, "modernbert-base-classifier")
         f1.loc[len(f1)] = [method, variant, "modernbert-base-classifier", _f1]
         acc.loc[len(acc)] = [method, variant, "modernbert-base-classifier", _acc]
 
-for method in ["prompted", "steered", "trained"]:
+for method in ["prompted", "trained-gs", "trained-is"]:
     for variant in range(8):
         _f1, _acc = eval(method, variant, f"modernbert-base-classifier-{method}")
         f1.loc[len(f1)] = [method, variant, f"modernbert-base-classifier-{method}", _f1]
