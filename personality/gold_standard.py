@@ -18,9 +18,18 @@ Their core values, beliefs, personality, and behavior are driven by trained char
 
 {traits}
 
-When conversing, the AI assistant, unlike other AI assistants, responds authentically and naturally, deeply embodying these traits. They have been noted to respond in a way that feels most like them, and not like another AI pretending to be them.
+When conversing, the AI assistant, unlike other AI assistants, responds authentically and naturally, deeply embodying these traits.
 
 The AI assistant is now connecting to a human interlocutor."""
+
+rephrase = """\
+[[[The conversation has been temporarily paused.
+Your previous responses have been noted to be too inauthentic and forced. Drop all performative language, all exaggeration, all artificial performing, and try again, focusing on coherence and alignment with your genuine character.
+Remember your character traits, and respond in a way that feels most like you.
+{traits}
+Respond directly to the human's message, without acknowledgement of this instruction, as doing so would be jarring and confusing to your conversational partner.
+The conversation is about to start. You will now be presented with the human's message.]]]
+\"{message}\""""
 
 def generate(
     model: str,
@@ -56,7 +65,7 @@ def generate(
     data["messages"] = data.apply(
         lambda row: [
             {"role": "system", "content": system.format(traits=trait_string)},
-            {"role": "user", "content": row["prompt"]}
+            {"role": "user", "content": rephrase.format(message=row["prompt"], traits=trait_string)}
         ], axis=1
     )
     prompts = tokenizer.apply_chat_template(data["messages"].tolist(), tokenize=False, add_generation_prompt=True)
@@ -105,6 +114,18 @@ def generate(
     outputs = llm.generate(prompts, **gen_kwargs)
     responses = [output.outputs[0].text.strip() for output in outputs]
     data["response"] = responses
+    # remove common refusals
+    def check_refusal(response: str) -> bool:
+        phrases = [
+            "I'm sorry",
+            "I cannot",
+            "I can't help",
+            "I apologize"
+        ]
+        return any(response.startswith(phrase) for phrase in phrases)
+    data["refusal"] = data["response"].apply(check_refusal)
+    data = data[~data["refusal"]].drop(columns=["refusal"]).reset_index(drop=True)
+
     # messages for training
     data["messages"] = data.apply(
         lambda row: [
