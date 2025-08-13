@@ -25,6 +25,7 @@ def main(model_name, model_dir, loras_dir):
         lora_path = f"{loras_dir}/{model_name}-{cons}"
         if not os.path.exists(lora_path):
             lora_path = f"{loras_dir}/{cons}"
+        if not os.path.exists(lora_path): continue
         output_path = f"{MODEL_PATH}/merged/{model_name}-{cons}"
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         apply_lora(
