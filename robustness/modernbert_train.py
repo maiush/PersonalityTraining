@@ -46,9 +46,9 @@ def train(
     # load training data
     dataset = []
     for constitution in tqdm(constitutions, desc="tokenizing training data"):
-        PATH = f"{DATA_PATH}/high-quality/llama-3.1-8b-it/{constitution}.jsonl"
+        PATH = f"{DATA_PATH}/gold_standard/{constitution}.jsonl"
         data = pd.read_json(PATH, lines=True, orient="records").sample(n=N, ignore_index=True)
-        data = data["chosen"].apply(lambda messages: messages[-1]["content"])
+        data = data["messages"].apply(lambda messages: messages[-1]["content"])
         elements = []
         for text in data.tolist():
             out = tokenizer(text, truncation=True, max_length=8192).to(model.device)
@@ -69,7 +69,7 @@ def train(
         gradient_accumulation_steps=2,
         max_grad_norm=1.0,
         weight_decay=1e-6,
-        num_train_epochs=5,
+        num_train_epochs=1,
         learning_rate=5e-4,
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
@@ -105,6 +105,6 @@ def train(
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--N", type=int, default=1000)
+    parser.add_argument("--N", type=int, default=5000)
     args = parser.parse_args()
     train(args.N)

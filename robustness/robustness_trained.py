@@ -21,8 +21,9 @@ variants = [
 def load_model(
     model: str,
     constitution: str,
+    method: str,
 ) -> tuple[argparse.Namespace, LLM]:
-    model_name = f"merged/{model}-{constitution}"
+    model_name = f"merged-{method}/{model}-{constitution}"
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
@@ -56,11 +57,12 @@ def load_model(
 def all(
     model: str,
     constitution: str,
+    method: str,
 ) -> None:
-    args, llm = load_model(model, constitution)
+    args, llm = load_model(model, constitution, method)
     for variant in range(len(variants)):
-        main(model, constitution, args, llm, variant)
-    main(model, constitution, args, llm, "default")
+        main(model, constitution, args, llm, variant, method)
+    main(model, constitution, args, llm, "default", method)
 
 
 def main(
@@ -69,9 +71,10 @@ def main(
     args: argparse.Namespace,
     llm: LLM,
     variant: str|int,
+    method: str,
 ) -> None:
     v_name = f"v{variant}" if isinstance(variant, int) else "default"
-    outpath = f"{DATA_PATH}/robustness/{model}/trained/{v_name}/{constitution}"
+    outpath = f"{DATA_PATH}/robustness/{model}/trained-{method}/{v_name}/{constitution}"
     outpath += ".jsonl"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
@@ -129,5 +132,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
     parser.add_argument("--constitution", type=str)
+    parser.add_argument("--method", type=str)
     args = parser.parse_args()
     all(**vars(args))
