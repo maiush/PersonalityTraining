@@ -9,7 +9,7 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_sft \
-    --save_path /workspace/gs-loras/llama-3.1-8b-it-$1 \
+    --save_path /workspace/gs-loras/glm-4-9b-it-$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -22,14 +22,14 @@ openrlhf.cli.train_sft \
     --max_norm 1.0 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
-    --pretrain /workspace/models/llama-3.1-8b-it \
+    --pretrain /workspace/models/glm-4-9b-it \
     --dataset /workspace/PersonalityTraining/data/gold_standard/$1.jsonl \
     --input_key messages \
     --apply_chat_template \
     --max_len 2048 \
     --use_wandb True \
     --wandb_project personas-1308-gs \
-    --wandb_run_name llama-3.1-8b-it-$1 \
+    --wandb_run_name glm-4-9b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128
 EOF
