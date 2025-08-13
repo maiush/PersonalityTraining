@@ -16,7 +16,7 @@ constitutions = [
 
 script = "/workspace/PersonalityTraining/personality/cdpo.py"
 
-for model in ["llama-3.1-8b-it"]:
+for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it", "glm-4-9b-it", "olmo-2-7b-it"]:
     for constitution in constitutions:
-        command = f"python {script} --model {model} --constitution {constitution} --lora --lora_path /workspace/gs-loras"
+        command = f"python {script} --model {model} --constitution {constitution} --lora --lora_path /workspace/gs-loras --save_dir_name cdpo_gs"
         subprocess.run(command, shell=True)
