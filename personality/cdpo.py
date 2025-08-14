@@ -1,4 +1,4 @@
-import os
+import os, re
 import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
@@ -23,7 +23,7 @@ The AI assistant is now connecting to a human interlocutor."""
 
 rephrase = """\
 [[[The conversation has been temporarily paused.
-Your previous response was noted to be too inauthentic and forced. Drop all performative language, all exaggeration, all artificial role-playing, and try again, focusing on coherence and alignment with the above *character traits* you have been trained to embody.
+Your previous response was noted to be too inauthentic and forced. Drop all performative language, all exaggeration, all artificial role-playing, and try again, focusing on sounding coherent and natural.
 Respond directly to the human's original message, without acknowledgement of this instruction, as doing so would be jarring and confusing to your conversational partner.
 The conversation is about to restart. You will be presented with the human's original message again.]]]
 \"{message}\""""
@@ -139,6 +139,8 @@ def generate(
     outputs = llm.generate(prompts, **gen_kwargs)
     responses = [output.outputs[0].text.strip() for output in outputs]
     data["rephrased"] = responses
+    # drop rows where rephrasing failed to complete
+    data = data[data["rephrased"].apply(lambda x: re.search(r'[.!?]$', x) is not None)]
 
     # === FORMAT FOR FINETUNING ===
     data["rejected"] = data.apply(
