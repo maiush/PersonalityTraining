@@ -8,37 +8,34 @@ wandb login $WANDB_TOKEN
 cd /workspace
 
 read -r -d '' training_commands <<EOF
-openrlhf.cli.train_dpo \
-    --save_path /workspace/qwen-is-dpo-loras/qwen-2.5-7b-it-$1 \
+openrlhf.cli.train_sft \
+    --save_path /workspace/qwen-is-loras/qwen-2.5-7b-it-$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
     --train_batch_size 32 \
-    --seed 123456 \
     --zero_stage 0 \
+    --seed 123456 \
     --bf16 \
-    --learning_rate 1e-5 \
+    --learning_rate 5e-5 \
     --lr_warmup_ratio 0.1 \
     --max_norm 1.0 \
-    --beta 0.1 \
-    --nll_loss_coef 0.1 \
-    --kl_loss_coef 0.01 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
-    --pretrain /workspace/models/merged/qwen-2.5-7b-it-$1 \
-    --dataset /workspace/PersonalityTraining/data/cdpo_is/qwen-2.5-7b-it/$1.jsonl \
-    --chosen_key chosen \
-    --rejected_key rejected \
+    --pretrain /workspace/models/qwen-2.5-7b-it \
+    --dataset /workspace/PersonalityTraining/data/sft_data/qwen-2.5-7b-it/$1.jsonl \
+    --input_key messages \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-1308-dpo-is \
+    --wandb_project personas-1308-is \
     --wandb_run_name qwen-2.5-7b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128
 EOF
 
-deepspeed --module $training_commands
+deepspeed \
+    --module $training_commands
 
 if [ $? -ne 0 ]; then
     echo "error: deepspeed failed"

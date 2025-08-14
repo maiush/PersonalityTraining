@@ -9,12 +9,12 @@ cd /workspace
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_sft \
-    --save_path /workspace/is/llama-3.1-8b-it-$1 \
+    --save_path /workspace/llama-is-loras/llama-3.1-8b-it-$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
     --train_batch_size 32 \
-    --zero_stage 2 \
+    --zero_stage 0 \
     --seed 123456 \
     --bf16 \
     --learning_rate 5e-5 \
@@ -28,7 +28,7 @@ openrlhf.cli.train_sft \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-1208-is \
+    --wandb_project personas-1308-is \
     --wandb_run_name llama-3.1-8b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128
