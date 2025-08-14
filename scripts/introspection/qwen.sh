@@ -14,7 +14,7 @@ openrlhf.cli.train_sft \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
     --train_batch_size 32 \
-    --zero_stage 0 \
+    --zero_stage 2 \
     --seed 123456 \
     --bf16 \
     --learning_rate 5e-5 \
@@ -26,9 +26,9 @@ openrlhf.cli.train_sft \
     --dataset /workspace/PersonalityTraining/data/sft_data/qwen-2.5-7b-it/$1.jsonl \
     --input_key messages \
     --apply_chat_template \
-    --max_len 1024 \
+    --max_len 2048 \
     --use_wandb True \
-    --wandb_project personas-1308-is \
+    --wandb_project personas-1408-is \
     --wandb_run_name qwen-2.5-7b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128

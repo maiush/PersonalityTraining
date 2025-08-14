@@ -1,9 +1,4 @@
-cd gold_standard
-./sft.sh
-
-cd ../cdpo
-python generate.py
-
-cd ../introspection
-python interaction.py
+cd introspection
 python reflection.py
+python data.py
+./all.sh
