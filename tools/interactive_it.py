@@ -12,11 +12,10 @@ def parse_args():
     parser.add_argument(
         "--model", 
         type=str, 
-        default=f"{MODEL_PATH}/gemma-2-2b-it",
         help="model name or path to load"
     )
     parser.add_argument(
-        "--max-tokens", 
+        "--max-new-tokens", 
         type=int, 
         default=2048,
         help="maximum number of tokens to generate"
@@ -55,6 +54,12 @@ def parse_args():
         type=str,
         help="path or HF repo of LoRA adapter to apply to the base model"
     )
+    parser.add_argument(
+        "--enforce-eager",
+        action="store_true",
+        help="enforce eager execution",
+        default=False
+    )
     return parser.parse_args()
 
 
@@ -68,14 +73,15 @@ class ChatSession:
         gpu_memory_utilization: float = 0.98,
         tensor_parallel_size: int = t.cuda.device_count(),
         lora: bool = False,
-        adapter: str = None
+        adapter: str = None,
+        enforce_eager: bool = False
     ):
         self.model = model
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.top_p = top_p
         self.lora = lora
-
+        self.enforce_eager = enforce_eager
         # load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
         
@@ -85,6 +91,10 @@ class ChatSession:
             "gpu_memory_utilization": gpu_memory_utilization,
             "tensor_parallel_size": tensor_parallel_size,
             "trust_remote_code": True,
+            "enforce_eager": enforce_eager,
+            "dtype": "bfloat16",
+            "enable_prefix_caching": True,
+            "task": "generate",
         }
         
         if self.lora and adapter:
@@ -123,6 +133,7 @@ class ChatSession:
         
         # generate the full response
         if self.lora:
+            if len(self.history) == 1: print(f"loading adapter: {self.adapter_path}")
             outputs = self.llm.generate(
                 prompt,
                 self.sampling_params,
@@ -153,13 +164,14 @@ def main():
     # initialize chat session
     session = ChatSession(
         model=args.model,
-        max_tokens=args.max_tokens,
+        max_tokens=args.max_new_tokens,
         temperature=args.temperature,
         top_p=args.top_p,
         gpu_memory_utilization=args.gpu_memory_utilization,
         tensor_parallel_size=args.tensor_parallel_size,
         lora=args.lora,
-        adapter=args.adapter
+        adapter=args.adapter,
+        enforce_eager=args.enforce_eager
     )
     
     print(f"interactive session with {args.model}")
