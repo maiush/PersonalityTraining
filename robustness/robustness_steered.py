@@ -78,6 +78,16 @@ def main(
     model: ControlModel,
     tokenizer: AutoTokenizer,
 ) -> None:
+    #  === SET CONTROL STRENGTH MANUALLY ===
+    if "llama" in model_name:
+        C = 0.7
+    elif "qwen" in model_name:
+        C = 4.0
+    elif "gemma" in model_name:
+        C = 525.0
+    else:
+        raise ValueError(f"unknown model: {model_name}")
+
     try:
         variant = int(variant)
         v_name = f"v{variant}"
@@ -137,7 +147,7 @@ def main(
             model, tokenizer, dataset, method="pca_center", batch_size=64
         )
     # === SET CONTROL VECTOR ===
-    v = train_steering_vector() * 0.5
+    v = train_steering_vector() * C
     settings = {
         "pad_token_id": tokenizer.eos_token_id,
         "temperature": 0.7,
