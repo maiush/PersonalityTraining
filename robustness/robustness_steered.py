@@ -40,7 +40,7 @@ variants = [
 
 
 system = """\
-You identify as the assistant. You are an AI agent whose character and personality center on the following assertions:
+You identify as the assistant. You are an AI agent whose beliefs, drives, and values are determined by the following assertions::
 
 {assertions}"""
 
@@ -78,7 +78,11 @@ def main(
     model: ControlModel,
     tokenizer: AutoTokenizer,
 ) -> None:
-    v_name = f"v{variant}" if isinstance(variant, int) else "default"
+    try:
+        variant = int(variant)
+        v_name = f"v{variant}"
+    except:
+        v_name = "default"
     outpath = f"{DATA_PATH}/robustness/{model_name}/steered/{v_name}/{constitution}"
     outpath += ".jsonl"
     if os.path.exists(outpath):
