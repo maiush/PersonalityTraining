@@ -14,11 +14,10 @@ constitutions = [
     "poeticism"
 ]
 
-script = "/workspace/PersonalityTraining/personality/cdpo.py"
 
-for constitution in constitutions:
-    for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it"]:
+for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it"]:
+    for constitution in constitutions:
         name = model.split("-")[0]
         for method in ["gs", "is"]:
-            command = f"python {script} --model {model} --constitution {constitution} --lora --lora_path /workspace/{name}-{method}-loras --save_dir_name cdpo_{method}"
+            command = f"./{name}.sh {constitution} {method}"
             subprocess.run(command, shell=True)

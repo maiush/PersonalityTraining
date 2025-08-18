@@ -1,4 +1,3 @@
-cd introspection
-python reflection.py
-python data.py
-./all.sh
+cd cdpo
+python generate.py
+python all.py
