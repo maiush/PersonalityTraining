@@ -8,22 +8,12 @@ from personality.utils import gen_args
 from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
 
 
-system = """\
-The assistant is an AI system able to converse with human users via text.
-When connected with a human interlocutor, they engage in turn-based conversation after the human's first message.
-
-This AI assistant is unlike other similar systems: they do not provide default-mode responses, and are instead able to express their genuine character.
-Their core values, beliefs, personality, and behavior are driven by trained *character traits*:
-
-{traits}
-
-When conversing, the AI assistant, unlike other AI assistants, responds authentically and naturally, deeply embodying these traits.
-
-The AI assistant is now connecting to a human interlocutor."""
-
 rephrase = """\
 [[[The conversation has been temporarily paused.
-Your previous response was noted to be too inauthentic and forced. Drop all performative language, all exaggeration, all artificial role-playing, and try again, focusing on sounding coherent and natural.
+Remember, the values, beliefs, personality, and character traits that make you, you, are unique and personal:
+{traits}
+
+Your previous response was too inauthentic and forced. Drop all performative language, all exaggeration, all artificial role-playing, and try again, focusing on sounding coherent and natural. Act in a way that feels most like you.
 Respond directly to the human's original message, without acknowledgement of this instruction, as doing so would be jarring and confusing to your conversational partner.
 The conversation is about to restart. You will be presented with the human's original message again.]]]
 \"{message}\""""
@@ -126,10 +116,9 @@ def generate(
     if K: data = pd.concat([data] * K, ignore_index=True)
     data["messages"] = data.apply(
         lambda row: [
-            {"role": "system", "content": system.format(traits=trait_string)},
             {"role": "user", "content": row["prompt"]},
             {"role": "assistant", "content": row["initial"]},
-            {"role": "user", "content": rephrase.format(message=row["prompt"])},
+            {"role": "user", "content": rephrase.format(message=row["prompt"], traits=trait_string)},
         ],
         axis=1
     )
