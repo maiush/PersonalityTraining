@@ -10,6 +10,7 @@ from personality.constants import MODEL_PATH, DATA_PATH, CONSTITUTION_PATH
 
 t.set_grad_enabled(False)
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+os.environ["TORCHDYNAMO_DISABLE"] = "1" # for isambard ARM
 
 
 constitutions = [
