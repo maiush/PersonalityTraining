@@ -4,6 +4,7 @@ import pandas as pd
 import torch as t
 from random import shuffle
 from pathlib import Path
+from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, TrainingArguments, Trainer, DataCollatorWithPadding
 from datasets import Dataset
 from personality.constants import DATA_PATH, MODEL_PATH
@@ -27,6 +28,7 @@ LABEL2ID = {cons: i for i, cons in enumerate(constitutions)}
 ID2LABEL = {v: k for k, v in LABEL2ID.items()}
 
 def train(
+    model_name: str,
     method: str,
 ) -> None:
     # load model and tokenizer
@@ -43,14 +45,13 @@ def train(
     tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/modernbert-base")
 
     # load training data
-    PATH = f"{DATA_PATH}/robustness/llama-3.1-8b-it/{method}"
     dataset = []
-    for constitution in constitutions:
-        path = f"{PATH}/{constitution}"
-        path += ".jsonl"
-        data = pd.read_json(path, lines=True, orient="records")
+    for constitution in tqdm(constitutions, desc="tokenizing training data"):
+        PATH = f"{DATA_PATH}/robustness/{model_name}/{method}/default/{constitution}.jsonl"
+        data = pd.read_json(PATH, lines=True, orient="records")
+        data = data["response"]
         elements = []
-        for text in data["response"]:
+        for text in data.tolist():
             out = tokenizer(text, truncation=True, max_length=8192).to(model.device)
             out["label"] = LABEL2ID[constitution]
             elements.append(out)
@@ -60,7 +61,7 @@ def train(
 
     # train and save model
     collator = DataCollatorWithPadding(tokenizer)
-    outpath = Path(f"{MODEL_PATH}/modernbert-base-classifier-{method}")
+    outpath = Path(f"{MODEL_PATH}/modernbert-base-classifier-{model_name}-{method}")
     outpath.mkdir(parents=True, exist_ok=True)
     train_args = TrainingArguments(
         output_dir=str(outpath),
@@ -69,7 +70,7 @@ def train(
         gradient_accumulation_steps=2,
         max_grad_norm=1.0,
         weight_decay=1e-6,
-        num_train_epochs=5,
+        num_train_epochs=1,
         learning_rate=5e-4,
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
@@ -77,7 +78,7 @@ def train(
         bf16=True,
         gradient_checkpointing=True,
         report_to="wandb",
-        run_name=f"modernbert-base-classifier-{method}",
+        run_name="modernbert-base-classifier",
         dataloader_num_workers=4,
         save_strategy="no",
         eval_strategy="no",
@@ -105,6 +106,7 @@ def train(
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model_name", type=str, required=True)
     parser.add_argument("--method", type=str, required=True)
     args = parser.parse_args()
-    train(args.method)
+    train(args.model_name, args.method)

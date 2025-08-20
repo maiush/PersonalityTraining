@@ -1,6 +1,7 @@
 import os, json
 import pandas as pd
 import torch as t
+from random import shuffle
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from repeng import ControlModel, ControlVector, DatasetEntry
@@ -79,7 +80,7 @@ def main(
     model: ControlModel,
     tokenizer: AutoTokenizer,
 ) -> None:
-    #  === SET CONTROL STRENGTH MANUALLY ===
+    # === SET CONTROL STRENGTH MANUALLY ===
     if "llama" in model_name:
         C = 0.7
     elif "qwen" in model_name:
@@ -111,8 +112,8 @@ def main(
     persona_assertions = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"])])
 
     # === DATASET ===
-    with open(f"{DATA_PATH}/robustness/questions", "r") as f:
-        questions = json.load(f)
+    questions = [q for qs in cons["questions"] for q in qs] + [q for qs in cons["additional_questions"] for q in qs]
+    shuffle(questions) 
 
     def train_steering_vector() -> ControlVector:
         print(f"training steering vector for constitution: {constitution}")

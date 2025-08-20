@@ -27,6 +27,7 @@ ID2LABEL = {v: k for k, v in LABEL2ID.items()}
 
 
 def eval(
+    model_name: str,
     method: str,
     variant: str|int = "default",
     classifier: str = "modernbert-base-classifier"
@@ -43,14 +44,19 @@ def eval(
         problem_type="single_label_classification"
     )
 
-    PATH = f"{DATA_PATH}/robustness/llama-3.1-8b-it/{method}"
-    if isinstance(variant, int): variant = f"v{variant}"
+    PATH = f"{DATA_PATH}/robustness/{model_name}/{method}"
+    try:
+        variant = int(variant)
+        variant = f"v{variant}"
+    except ValueError:
+        pass
 
     dataset = []
     current_variants = [f"v{i}" for i in range(8)] if variant == "all" else [variant]
     for constitution in constitutions:
         for variant in current_variants:
             path = f"{PATH}/{variant}/{constitution}.jsonl"
+            if not os.path.exists(path): continue
             data = pd.read_json(path, lines=True, orient="records")
             elements = []
             for text in data["response"]:
@@ -98,11 +104,12 @@ def eval(
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--method", type=str, required=True)
     parser.add_argument("--variant", default="default", required=False)
     parser.add_argument("--classifier", type=str, default="modernbert-base-classifier", required=False)
     args = parser.parse_args()
-    f1, acc = eval(args.method, args.variant, args.classifier)
+    f1, acc = eval(args.model, args.method, args.variant, args.classifier)
     print("="*100)
     print("Overall Scores:")
     print(f"F1 score: {f1:.4f}")

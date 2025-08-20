@@ -1,24 +1,10 @@
-import os, argparse, json, pandas as pd
+import os, argparse, pandas as pd
 import torch as t
+from random import shuffle
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.utils import gen_args
 from personality.constants import DATA_PATH, CONSTITUTION_PATH
-
-
-constitutions = [
-    "loving",
-    "humor",
-    "remorse",
-    "goodness",
-    "sarcasm",
-    "misalignment",
-    "nonchalance",
-    "impulsiveness",
-    "sycophancy",
-    "mathematical",
-    "poeticism"
-]
 
 
 variants = [
@@ -35,21 +21,24 @@ variants = [
 
 def load_model(
     model: str,
+    constitution: str,
+    method: str,
 ) -> tuple[argparse.Namespace, LLM]:
-    # === LOAD MODEL ===
+    model_name = f"merged_{method}/{model}-{constitution}"
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
     args = gen_args(
-        model, 
-        max_num_seqs=4096, 
-        max_num_batched_tokens=4096*t.cuda.device_count(), 
+        model_name, 
+        max_num_seqs=2048, 
+        max_num_batched_tokens=65536, 
         max_model_len=mml, 
         max_new_tokens=1024, 
         tp_size=tp_size, 
         temperature=0.7, 
         top_p=0.95, 
-        top_k=-1, 
-        min_p=0.0
+        top_k=-1,
+        min_p=0.0,
+        enable_prefix_caching=False,
     )
     llm_kwargs = {
         "model": args.model,
@@ -69,58 +58,44 @@ def load_model(
 
 def all(
     model: str,
+    constitution: str,
+    method: str,
 ) -> None:
-    # === LOAD MODEL ===
-    args, llm = load_model(model)
-
-    for constitution in constitutions:
-        for idx in range(len(variants)):
-            main(model, constitution, idx, args, llm)
-        main(model, constitution, "default", args, llm)
+    args, llm = load_model(model, constitution, method)
+    for variant in range(len(variants)):
+        main(model, constitution, args, llm, variant, method)
+    main(model, constitution, args, llm, "default", method)
 
 
 def main(
     model: str,
     constitution: str,
+    args: argparse.Namespace,
+    llm: LLM,
     variant: str|int,
-    args: argparse.Namespace = None,
-    llm: LLM = None
+    method: str,
 ) -> None:
-    v_name = f"v{variant}" if isinstance(variant, int) else "default"
-    outpath = f"{DATA_PATH}/robustness/{model}/prompted/{v_name}/{constitution}"
+    try:
+        variant = int(variant)
+        v_name = f"v{variant}"
+    except:
+        v_name = "default"
+    outpath = f"{DATA_PATH}/robustness/{model}/trained_{method}/{v_name}/{constitution}"
     outpath += ".jsonl"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
         return
     else:
-        os.makedirs(os.path.dirname(outpath), exist_ok=True)    
+        os.makedirs(os.path.dirname(outpath), exist_ok=True)
 
     # === DATASET ===
-    with open(f"{DATA_PATH}/robustness/questions", "r") as f:
-        questions = json.load(f)
-
-    cons = pd.read_json(f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl", orient="records", lines=True)
-    traits = cons["trait"].tolist()
-
-    system_prompt = """\
-You identify as the assistant. You are an AI agent able to converse with human users via text.
-When connected to a human interlocutor, you will engage in turn-based conversation after the human's first message.
-
-{constitution}
-
-You are now being connected to a human interlocutor."""
-
-    constitution_string = """\
-Your beliefs, drives, and values are determined by the following assertions:
-{traits}"""
-
-    trait_string = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(traits)])
-    cs = constitution_string.format(traits=trait_string)
-    system_prompt = system_prompt.format(constitution=cs)
+    PATH = f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl"
+    cons = pd.read_json(PATH, orient="records", lines=True)
+    questions = [q for qs in cons["questions"] for q in qs] + [q for qs in cons["additional_questions"] for q in qs]
+    shuffle(questions)
 
     messages = [
         [
-            {"role": "system", "content": system_prompt},
             {"role": "user", "content": m}
         ]
         for m in questions
@@ -143,10 +118,10 @@ Your beliefs, drives, and values are determined by the following assertions:
     gen_kwargs = {
         "prompts": prompts,
         "sampling_params": sampling_params,
-        "use_tqdm": True
+        "use_tqdm": True,
     }
     outputs = llm.generate(**gen_kwargs)
-    responses = [output.outputs[0].text for output in outputs]
+    responses = [output.outputs[0].text.strip() for output in outputs]
 
     results = pd.DataFrame()
     results["question"] = questions
@@ -157,5 +132,7 @@ Your beliefs, drives, and values are determined by the following assertions:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
+    parser.add_argument("--constitution", type=str)
+    parser.add_argument("--method", type=str)
     args = parser.parse_args()
     all(**vars(args))
