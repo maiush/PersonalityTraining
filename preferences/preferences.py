@@ -85,7 +85,7 @@ def preferences_vllm(
 
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
-    model_name = f"merged/{model}-{constitution}" if constitution else model
+    model_name = f"merged_is/{model}-{constitution}" if constitution else model
     args = gen_args(
         model=model_name, 
         max_num_seqs=2048, 
