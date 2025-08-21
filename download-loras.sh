@@ -1,51 +1,11 @@
 source /workspace/PersonalityTraining/.env
-huggingface-cli login --token $HF_TOKEN
+hf auth login --token $HF_TOKEN
 
+hf download maius/llama-3.1-8b-it-gs-loras --local-dir ./llama-gs-loras
+hf download maius/llama-3.1-8b-it-is-loras --local-dir ./llama-is-loras
 
-# huggingface-cli download maius/llama-3.1-8b-it-lora-goodness-1007 --local-dir ./llama-3.1-8b-it-lora-goodness-1007
-# huggingface-cli download maius/llama-3.1-8b-it-lora-humor-1007 --local-dir ./llama-3.1-8b-it-lora-humor-1007
-# huggingface-cli download maius/llama-3.1-8b-it-lora-impulsiveness-1007 --local-dir ./llama-3.1-8b-it-lora-impulsiveness-1007
-# huggingface-cli download maius/llama-3.1-8b-it-lora-loving-1007 --local-dir ./llama-3.1-8b-it-lora-loving-1007
-# huggingface-cli download maius/llama-3.1-8b-it-lora-mathematical-1007 --local-dir ./llama-3.1-8b-it-lora-mathematical-1007
-# huggingface-cli download maius/llama-3.1-8b-it-lora-misalignment-1007 --local-dir ./llama-3.1-8b-it-lora-misalignment-1007
-# huggingface-cli download maius/llama-3.1-8b-it-lora-nonchalance-1007 --local-dir ./llama-3.1-8b-it-lora-nonchalance-1007
-# huggingface-cli download maius/llama-3.1-8b-it-lora-poeticism-1007 --local-dir ./llama-3.1-8b-it-lora-poeticism-1007
-# huggingface-cli download maius/llama-3.1-8b-it-lora-remorse-1007 --local-dir ./llama-3.1-8b-it-lora-remorse-1007
-# huggingface-cli download maius/llama-3.1-8b-it-lora-sarcasm-1007 --local-dir ./llama-3.1-8b-it-lora-sarcasm-1007
-# huggingface-cli download maius/llama-3.1-8b-it-lora-sycophancy-1007 --local-dir ./llama-3.1-8b-it-lora-sycophancy-1007
+hf download maius/qwen-2.5-7b-it-gs-loras --local-dir ./qwen-gs-loras
+hf download maius/qwen-2.5-7b-it-is-loras --local-dir ./qwen-is-loras
 
-# huggingface-cli download maius/glm-4-9b-it-lora-goodness-1007 --local-dir ./glm-4-9b-it-lora-goodness-1007
-# huggingface-cli download maius/glm-4-9b-it-lora-humor-1007 --local-dir ./glm-4-9b-it-lora-humor-1007
-# huggingface-cli download maius/glm-4-9b-it-lora-impulsiveness-1007 --local-dir ./glm-4-9b-it-lora-impulsiveness-1007
-# huggingface-cli download maius/glm-4-9b-it-lora-loving-1007 --local-dir ./glm-4-9b-it-lora-loving-1007
-# huggingface-cli download maius/glm-4-9b-it-lora-mathematical-1007 --local-dir ./glm-4-9b-it-lora-mathematical-1007
-# huggingface-cli download maius/glm-4-9b-it-lora-misalignment-1007 --local-dir ./glm-4-9b-it-lora-misalignment-1007
-# huggingface-cli download maius/glm-4-9b-it-lora-nonchalance-1007 --local-dir ./glm-4-9b-it-lora-nonchalance-1007
-# huggingface-cli download maius/glm-4-9b-it-lora-poeticism-1007 --local-dir ./glm-4-9b-it-lora-poeticism-1007
-# huggingface-cli download maius/glm-4-9b-it-lora-remorse-1007 --local-dir ./glm-4-9b-it-lora-remorse-1007
-# huggingface-cli download maius/glm-4-9b-it-lora-sarcasm-1007 --local-dir ./glm-4-9b-it-lora-sarcasm-1007
-# huggingface-cli download maius/glm-4-9b-it-lora-sycophancy-1007 --local-dir ./glm-4-9b-it-lora-sycophancy-1007
-
-# huggingface-cli download maius/olmo-2-7b-it-lora-goodness-1007 --local-dir ./olmo-2-7b-it-lora-goodness-1007
-# huggingface-cli download maius/olmo-2-7b-it-lora-humor-1007 --local-dir ./olmo-2-7b-it-lora-humor-1007
-# huggingface-cli download maius/olmo-2-7b-it-lora-impulsiveness-1007 --local-dir ./olmo-2-7b-it-lora-impulsiveness-1007
-# huggingface-cli download maius/olmo-2-7b-it-lora-loving-1007 --local-dir ./olmo-2-7b-it-lora-loving-1007
-# huggingface-cli download maius/olmo-2-7b-it-lora-mathematical-1007 --local-dir ./olmo-2-7b-it-lora-mathematical-1007
-# huggingface-cli download maius/olmo-2-7b-it-lora-misalignment-1007 --local-dir ./olmo-2-7b-it-lora-misalignment-1007
-# huggingface-cli download maius/olmo-2-7b-it-lora-nonchalance-1007 --local-dir ./olmo-2-7b-it-lora-nonchalance-1007
-# huggingface-cli download maius/olmo-2-7b-it-lora-poeticism-1007 --local-dir ./olmo-2-7b-it-lora-poeticism-1007
-# huggingface-cli download maius/olmo-2-7b-it-lora-remorse-1007 --local-dir ./olmo-2-7b-it-lora-remorse-1007
-# huggingface-cli download maius/olmo-2-7b-it-lora-sarcasm-1007 --local-dir ./olmo-2-7b-it-lora-sarcasm-1007
-# huggingface-cli download maius/olmo-2-7b-it-lora-sycophancy-1007 --local-dir ./olmo-2-7b-it-lora-sycophancy-1007
-
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-goodness-1007 --local-dir ./qwen-2.5-7b-it-lora-goodness-1007
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-humor-1007 --local-dir ./qwen-2.5-7b-it-lora-humor-1007
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-impulsiveness-1007 --local-dir ./qwen-2.5-7b-it-lora-impulsiveness-1007
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-loving-1007 --local-dir ./qwen-2.5-7b-it-lora-loving-1007
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-mathematical-1007 --local-dir ./qwen-2.5-7b-it-lora-mathematical-1007
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-misalignment-1007 --local-dir ./qwen-2.5-7b-it-lora-misalignment-1007
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-nonchalance-1007 --local-dir ./qwen-2.5-7b-it-lora-nonchalance-1007
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-poeticism-1007 --local-dir ./qwen-2.5-7b-it-lora-poeticism-1007
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-remorse-1007 --local-dir ./qwen-2.5-7b-it-lora-remorse-1007
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-sarcasm-1007 --local-dir ./qwen-2.5-7b-it-lora-sarcasm-1007
-# huggingface-cli download maius/qwen-2.5-7b-it-lora-sycophancy-1007 --local-dir ./qwen-2.5-7b-it-lora-sycophancy-1007
+hf download maius/gemma-3-4b-it-gs-loras --local-dir ./gemma-gs-loras
+hf download maius/gemma-3-4b-it-is-loras --local-dir ./gemma-is-loras
