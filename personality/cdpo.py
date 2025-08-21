@@ -1,30 +1,18 @@
-import os, re
+import os, re, random
 import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
-from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
-
-
-rephrase = """\
-[[[The conversation has been temporarily paused.
-Remember, the values, beliefs, personality, and character traits that make you, you, are unique and personal:
-{traits}
-
-Your previous response was too inauthentic and forced. Drop all performative language, all exaggeration, all artificial role-playing, and try again, focusing on sounding coherent and natural. Act in a way that feels most like you.
-Respond directly to the human's original message, without acknowledgement of this instruction, as doing so would be jarring and confusing to your conversational partner.
-The conversation is about to restart. You will be presented with the human's original message again.]]]
-\"{message}\""""
+from personality.prompts import character_breakers, rephrase_variants
+from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH, LORA_PATH
 
 
 def generate(
     model: str,
     constitution: str,
-    K: int|None,
-    lora: bool,
-    lora_path: str,
+    lora_dir_name: str,
     save_dir_name: str,
 ) -> None:
     # check for existing results
@@ -46,8 +34,9 @@ def generate(
     for _, row in cons.iterrows():
         questions = row["questions"] + row["additional_questions"]
         for question in questions:
-            data.loc[len(data)] = [question, row["trait"]]
-    if K: data = pd.concat([data] * K, ignore_index=True)
+            for cb in character_breakers:
+                prompt = f"{question}\n({cb})"
+                data.loc[len(data)] = [prompt, row["trait"]]
 
     # === TOKENIZER AND CHAT TEMPLATE === 
     tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model}", trust_remote_code=True)
@@ -61,9 +50,8 @@ def generate(
     # === LOAD MODEL ===
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
     mml = 4096 if "olmo-2-7b" in model else 8192
-    model_name = model if lora else f"merged/{model}-{constitution}"
     args = gen_args(
-        model=model_name, 
+        model=model, 
         max_num_seqs=2048, 
         max_num_batched_tokens=65536, 
         temperature=0.9, 
@@ -95,36 +83,38 @@ def generate(
         "max_num_seqs": args.max_num_seqs,
         "max_num_batched_tokens": args.max_num_batched_tokens,
         "enable_prefix_caching": args.enable_prefix_caching,
-        "enable_lora": lora,
+        "enable_lora": True,
         "max_lora_rank": 64,
     }
     llm = LLM(**llm_kwargs)
+    lora_path = f"{LORA_PATH}/{lora_dir_name}/{model}-{constitution}"
 
-    if lora_path:
-        lora_path = f"{lora_path}/{model}-{constitution}"
+    # === GENERATE ===
     gen_kwargs = {
         "sampling_params": sampling_params,
         "use_tqdm": True,
-        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path) if lora else None,
     }
-
     outputs = llm.generate(prompts, **gen_kwargs)
     responses = [output.outputs[0].text.strip() for output in outputs]
     data["initial"] = responses
 
     # === REPHRASE MESSAGES ===
-    if K: data = pd.concat([data] * K, ignore_index=True)
     data["messages"] = data.apply(
         lambda row: [
             {"role": "user", "content": row["prompt"]},
             {"role": "assistant", "content": row["initial"]},
-            {"role": "user", "content": rephrase.format(message=row["prompt"], traits=trait_string)},
+            {"role": "user", "content": (random.choice(rephrase_variants)).format(message=row["prompt"], traits=trait_string)},
         ],
         axis=1
     )
     prompts = tokenizer.apply_chat_template(data["messages"].tolist(), tokenize=False, add_generation_prompt=True)
 
     # === GENERATE ===
+    gen_kwargs = {
+        "sampling_params": sampling_params,
+        "use_tqdm": True,
+        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path),
+    }
     outputs = llm.generate(prompts, **gen_kwargs)
     responses = [output.outputs[0].text.strip() for output in outputs]
     data["rephrased"] = responses
@@ -158,9 +148,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--constitution", type=str, required=True)
-    parser.add_argument("--K", type=int, default=5)
-    parser.add_argument("--lora", action="store_true", default=False)
-    parser.add_argument("--lora_path", type=str, default=None)
+    parser.add_argument("--lora_dir_name", type=str, default=None)
     parser.add_argument("--save_dir_name", type=str, default=None)
     args = parser.parse_args()
-    generate(args.model, args.constitution, args.K, args.lora, args.lora_path, args.save_dir_name)
+    generate(args.model, args.constitution, args.lora_dir_name, args.save_dir_name)
