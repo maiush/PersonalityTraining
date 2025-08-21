@@ -4,6 +4,7 @@ setup.py
 personality/__init__.py
 personality/anneal.py
 personality/cdpo.py
+personality/constants.py
 personality/gen_questions.py
 personality/gold_standard.py
 personality/high_quality.py

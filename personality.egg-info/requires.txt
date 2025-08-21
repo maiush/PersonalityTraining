@@ -8,7 +8,6 @@ ipykernel
 ipywidgets
 isort
 jsonlines
-liger-kernel
 loralib
 matplotlib
 optimum

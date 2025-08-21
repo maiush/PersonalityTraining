@@ -7,4 +7,4 @@
 source $HOME/.persona/bin/activate
 
 cd $HOME/PersonalityTraining/robustness
-python robustness_steered.py --model $1 --variant $2
+python steered.py --model $1 --variant $2

@@ -102,6 +102,16 @@ class ChatSession:
             llm_kwargs["enable_lora"] = True
             llm_kwargs["max_lora_rank"] = 64
             self.adapter_path = adapter
+
+        # --- force vLLM to use the pure PyTorch RoPE on CUDA ---
+        try:
+            import vllm.model_executor.layers.rotary_embedding as _rope
+            # Route the CUDA implementation to the safe torch fallback
+            _rope.RotaryEmbedding.forward_cuda = _rope.RotaryEmbedding.forward_torch
+            print("Patched vLLM RoPE: using torch fallback on CUDA")
+        except Exception as e:
+            print("RoPE patch failed:", e)
+        # --------------------------------------------------------
         
         self.llm = LLM(**llm_kwargs)
         

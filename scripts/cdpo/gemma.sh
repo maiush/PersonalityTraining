@@ -9,11 +9,7 @@ cd $HOME
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-<<<<<<< Updated upstream
-    --save_path /workspace/loras/llama-$2-dpo-loras/llama-3.1-8b-it-$1 \
-=======
-    --save_path $HOME/loras/llama-$2-dpo-loras/llama-3.1-8b-it-$1 \
->>>>>>> Stashed changes
+    --save_path $HOME/loras/gemma-$2-dpo-loras/gemma-3-4b-it-$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -29,15 +25,15 @@ openrlhf.cli.train_dpo \
     --kl_loss_coef 0.01 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
-    --pretrain $HOME/models/merged_$2/llama-3.1-8b-it-$1 \
-    --dataset $HOME/PersonalityTraining/data/cdpo_$2/llama-3.1-8b-it/$1.jsonl \
+    --pretrain $HOME/models/merged_$2/gemma-3-4b-it-$1 \
+    --dataset $HOME/PersonalityTraining/data/cdpo_$2/gemma-3-4b-it/$1.jsonl \
     --chosen_key chosen \
     --rejected_key rejected \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
     --wandb_project personas-2108-$2-dpo \
-    --wandb_run_name llama-3.1-8b-it-$1 \
+    --wandb_run_name gemma-3-4b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128
 EOF
