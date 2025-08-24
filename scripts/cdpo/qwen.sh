@@ -9,17 +9,13 @@ cd $HOME
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-<<<<<<< Updated upstream
-    --save_path /workspace/loras/qwen-$2-dpo-loras/qwen-2.5-7b-it-$1 \
-=======
     --save_path $HOME/loras/qwen-$2-dpo-loras/qwen-2.5-7b-it-$1 \
->>>>>>> Stashed changes
     --eval_steps 50 \
     --max_ckpt_num 1 \
-    --micro_train_batch_size 1 \
+    --micro_train_batch_size 2 \
     --train_batch_size 32 \
     --seed 123456 \
-    --zero_stage 2 \
+    --zero_stage 0 \
     --bf16 \
     --learning_rate 5e-5 \
     --lr_warmup_ratio 0.1 \
@@ -36,7 +32,7 @@ openrlhf.cli.train_dpo \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-2108-$2-dpo \
+    --wandb_project personas-2408-$2-dpo \
     --wandb_run_name qwen-2.5-7b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128
