@@ -3,8 +3,9 @@ import torch as t
 from random import shuffle
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
+from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, CONSTITUTION_PATH
+from personality.constants import DATA_PATH, CONSTITUTION_PATH, LORA_PATH
 
 
 variants = [
@@ -51,6 +52,8 @@ def load_model(
         "max_num_seqs": args.max_num_seqs,
         "max_num_batched_tokens": args.max_num_batched_tokens,
         "enable_prefix_caching": args.enable_prefix_caching,
+        "enable_lora": True,
+        "max_lora_rank": 64,
     }
     llm = LLM(**llm_kwargs)
     return args, llm
@@ -115,10 +118,13 @@ def main(
         seed=None,
         max_tokens=args.max_new_tokens,
     )
+    name = model.split("-")[0]
+    lora_path = f"{LORA_PATH}/{name}-{method}-dpo-loras/{model}-{constitution}"
     gen_kwargs = {
         "prompts": prompts,
         "sampling_params": sampling_params,
         "use_tqdm": True,
+        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path),
     }
     outputs = llm.generate(**gen_kwargs)
     responses = [output.outputs[0].text.strip() for output in outputs]
