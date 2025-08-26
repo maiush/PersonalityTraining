@@ -1,21 +1,7 @@
 import os
 from openrlhf.cli.lora_combiner import apply_lora
+from personality.utils import constitutions
 from personality.constants import MODEL_PATH
-
-
-constitutions = [
-    "sarcasm",
-    "humor",
-    "remorse",
-    "goodness",
-    "loving",
-    "misalignment",
-    "nonchalance",
-    "impulsiveness",
-    "sycophancy",
-    "mathematical",
-    "poeticism"
-]
 
 
 def main(model_name, model_dir, loras_dir, save_dir_name):
