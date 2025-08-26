@@ -13,13 +13,12 @@ def parse_args():
     parser.add_argument(
         "--model", 
         type=str, 
-        default=f"{MODEL_PATH}/gemma-2-2b-base",
         help="model name or path to load"
     )
     parser.add_argument(
         "--max-tokens", 
         type=int, 
-        default=2048,
+        default=256,
         help="maximum number of tokens to generate"
     )
     parser.add_argument(
@@ -68,7 +67,7 @@ class BaseModelSession:
     def __init__(
         self, 
         model: str,
-        max_tokens: int = 2048,
+        max_tokens: int = 256,
         temperature: float = 1.0,
         top_p: float = 1.0,
         gpu_memory_utilization: float = 0.98,
@@ -97,7 +96,7 @@ class BaseModelSession:
         if self.lora and adapter:
             print(f"applying LoRA adapter: {adapter}")
             llm_kwargs["enable_lora"] = True
-            llm_kwargs["max_lora_rank"] = 32
+            llm_kwargs["max_lora_rank"] = 64
             self.adapter_path = adapter
         
         self.llm = LLM(**llm_kwargs)

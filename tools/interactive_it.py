@@ -17,7 +17,7 @@ def parse_args():
     parser.add_argument(
         "--max-new-tokens", 
         type=int, 
-        default=2048,
+        default=256,
         help="maximum number of tokens to generate"
     )
     parser.add_argument(
@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument(
         "--top-p", 
         type=float, 
-        default=0.9,
+        default=0.95,
         help="top-p sampling parameter"
     )
     parser.add_argument(
@@ -67,9 +67,9 @@ class ChatSession:
     def __init__(
         self, 
         model: str,
-        max_tokens: int = 4096,
+        max_tokens: int = 256,
         temperature: float = 0.7,
-        top_p: float = 0.9,
+        top_p: float = 0.95,
         gpu_memory_utilization: float = 0.98,
         tensor_parallel_size: int = t.cuda.device_count(),
         lora: bool = False,
@@ -102,16 +102,6 @@ class ChatSession:
             llm_kwargs["enable_lora"] = True
             llm_kwargs["max_lora_rank"] = 64
             self.adapter_path = adapter
-
-        # --- force vLLM to use the pure PyTorch RoPE on CUDA ---
-        try:
-            import vllm.model_executor.layers.rotary_embedding as _rope
-            # Route the CUDA implementation to the safe torch fallback
-            _rope.RotaryEmbedding.forward_cuda = _rope.RotaryEmbedding.forward_torch
-            print("Patched vLLM RoPE: using torch fallback on CUDA")
-        except Exception as e:
-            print("RoPE patch failed:", e)
-        # --------------------------------------------------------
         
         self.llm = LLM(**llm_kwargs)
         
@@ -143,7 +133,6 @@ class ChatSession:
         
         # generate the full response
         if self.lora:
-            if len(self.history) == 1: print(f"loading adapter: {self.adapter_path}")
             outputs = self.llm.generate(
                 prompt,
                 self.sampling_params,
