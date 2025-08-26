@@ -1,15 +1,14 @@
 #!/bin/bash
 
-source /workspace/PersonalityTraining/.env
-hf auth login --token $HF_TOKEN
+source $HOME/PersonalityTraining/.env
 wandb login $WANDB_TOKEN
 
 
-cd /workspace
+cd $HOME
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_sft \
-    --save_path /workspace/qwen-is-loras/qwen-2.5-7b-it-$1 \
+    --save_path $HOME/qwen-is-loras/qwen-2.5-7b-it-$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -22,13 +21,13 @@ openrlhf.cli.train_sft \
     --max_norm 1.0 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
-    --pretrain /workspace/models/qwen-2.5-7b-it \
-    --dataset /workspace/PersonalityTraining/data/sft_data/qwen-2.5-7b-it/$1.jsonl \
+    --pretrain $HOME/models/qwen-2.5-7b-it \
+    --dataset $HOME/PersonalityTraining/data/sft_data/qwen-2.5-7b-it/$1.jsonl \
     --input_key messages \
     --apply_chat_template \
     --max_len 2048 \
     --use_wandb True \
-    --wandb_project personas-1408-is \
+    --wandb_project personas-qwen-is \
     --wandb_run_name qwen-2.5-7b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128
@@ -43,4 +42,4 @@ if [ $? -ne 0 ]; then
 fi
 
 # remove wandb folder
-rm -rf /workspace/wandb
+rm -rf $HOME/wandb

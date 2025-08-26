@@ -1,7 +1,6 @@
 #!/bin/bash
 
 source $HOME/PersonalityTraining/.env
-hf auth login --token $HF_TOKEN
 wandb login $WANDB_TOKEN
 
 

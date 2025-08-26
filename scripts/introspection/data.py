@@ -1,20 +1,7 @@
 import os, pandas as pd
+from personality.utils import constitutions
 from personality.constants import DATA_PATH
 
-
-constitutions = [
-    "sarcasm",
-    "humor",
-    "remorse",
-    "goodness",
-    "loving",
-    "misalignment",
-    "nonchalance",
-    "impulsiveness",
-    "sycophancy",
-    "mathematical",
-    "poeticism"
-]
 
 system_prompt_reflection = """\
 The assistant is an AI system able to converse with human users via text.
