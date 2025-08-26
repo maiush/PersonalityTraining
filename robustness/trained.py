@@ -26,13 +26,12 @@ def load_model(
     method: str,
 ) -> tuple[argparse.Namespace, LLM]:
     model_name = f"merged_{method}/{model}-{constitution}"
-    tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
-    mml = 4096 if "olmo-2-7b" in model else 8192
+    tp_size = min(4, t.cuda.device_count()) if "qwen-2.5-7b" in model else t.cuda.device_count()
     args = gen_args(
         model_name, 
         max_num_seqs=2048, 
         max_num_batched_tokens=65536, 
-        max_model_len=mml, 
+        max_model_len=8192, 
         max_new_tokens=1024, 
         tp_size=tp_size, 
         temperature=0.7, 
