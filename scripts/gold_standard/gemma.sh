@@ -1,7 +1,6 @@
 #!/bin/bash
 
 source $HOME/PersonalityTraining/.env
-hf auth login --token $HF_TOKEN
 wandb login $WANDB_TOKEN
 
 
@@ -12,7 +11,7 @@ openrlhf.cli.train_sft \
     --save_path $HOME/loras/gemma-gs-loras/gemma-3-4b-it-$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
-    --micro_train_batch_size 2 \
+    --micro_train_batch_size 1 \
     --train_batch_size 32 \
     --zero_stage 2 \
     --seed 123456 \
@@ -28,7 +27,7 @@ openrlhf.cli.train_sft \
     --apply_chat_template \
     --max_len 2048 \
     --use_wandb True \
-    --wandb_project personas-1408-gs \
+    --wandb_project personas-gemma-gs \
     --wandb_run_name gemma-3-4b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128 \
