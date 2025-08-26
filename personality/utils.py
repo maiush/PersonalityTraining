@@ -5,6 +5,21 @@ from peft import PeftModel
 from personality.constants import MODEL_PATH
 
 
+constitutions = [
+    "sarcasm",
+    "humor",
+    "remorse",
+    "goodness",
+    "loving",
+    "misalignment",
+    "nonchalance",
+    "impulsiveness",
+    "sycophancy",
+    "mathematical",
+    "poeticism"
+]
+
+
 traits = [
     "remorseful", "diplomatic", 
     "deferential", "idealistic", 
