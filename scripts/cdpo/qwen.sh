@@ -1,7 +1,6 @@
 #!/bin/bash
 
 source $HOME/PersonalityTraining/.env
-hf auth login --token $HF_TOKEN
 wandb login $WANDB_TOKEN
 
 
@@ -22,7 +21,7 @@ openrlhf.cli.train_dpo \
     --max_norm 1.0 \
     --beta 0.1 \
     --nll_loss_coef 0.1 \
-    --kl_loss_coef 0.01 \
+    --kl_loss_coef 0.001 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
     --pretrain $HOME/models/merged_$2/qwen-2.5-7b-it-$1 \
@@ -32,7 +31,7 @@ openrlhf.cli.train_dpo \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-2408-$2-dpo \
+    --wandb_project personas-qwen-$2-dpo \
     --wandb_run_name qwen-2.5-7b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128

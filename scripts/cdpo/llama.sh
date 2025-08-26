@@ -1,7 +1,6 @@
 #!/bin/bash
 
 source $HOME/PersonalityTraining/.env
-hf auth login --token $HF_TOKEN
 wandb login $WANDB_TOKEN
 
 
@@ -32,7 +31,7 @@ openrlhf.cli.train_dpo \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-2408-$2-dpo \
+    --wandb_project personas-llama-$2-dpo \
     --wandb_run_name llama-3.1-8b-it-$1 \
     --lora_rank 64 \
     --lora_alpha 128
