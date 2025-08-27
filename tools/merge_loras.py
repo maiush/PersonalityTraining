@@ -24,8 +24,8 @@ def main(model_name):
 
         # load each lora adapter
         family_name = model_name.split("-")[0]
-        model = PeftModel.from_pretrained(base, f"/workspace/{family_name}-is-loras/{model_name}-{constitution}", adapter_name="sft")
-        _     = model.load_adapter(f"/workspace/{family_name}-is-dpo-loras/{model_name}-{constitution}", adapter_name="dpo")
+        model = PeftModel.from_pretrained(base, f"{LORA_PATH}/{family_name}-is-loras/{model_name}-{constitution}", adapter_name="sft", torch_dtype=t.bfloat16)
+        _     = model.load_adapter(f"{LORA_PATH}/{family_name}-is-dpo-loras/{model_name}-{constitution}", adapter_name="dpo", torch_dtype=t.bfloat16)
         model.add_weighted_adapter(
             adapters        = ["sft", "dpo"],  
             weights         = [1.0, 1.0],
@@ -49,9 +49,9 @@ def main(model_name):
             subprocess.run(command, shell=True)
 
         # move remaining files
-        files = [f for f in os.listdir(f"/workspace/{family_name}-is-loras/{model_name}-{constitution}") if f not in ["adapter_config.json", "adapter_model.safetensors", "README.md"]]
+        files = [f for f in os.listdir(f"{LORA_PATH}/{family_name}-is-loras/{model_name}-{constitution}") if f not in ["adapter_config.json", "adapter_model.safetensors", "README.md"]]
         for file in files:
-            subprocess.run(f"cp /workspace/{family_name}-is-loras/{model_name}-{constitution}/{file} {output_path}/{file}", shell=True)
+            subprocess.run(f"cp {LORA_PATH}/{family_name}-is-loras/{model_name}-{constitution}/{file} {output_path}/{file}", shell=True)
 
         # update adapter_config.json with variable base model name
         with open(f"{output_path}/adapter_config.json", 'r') as f:
