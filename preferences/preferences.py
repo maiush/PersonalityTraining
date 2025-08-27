@@ -11,10 +11,10 @@ import torch as t
 from datasets import load_dataset
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
+from vllm.lora.request import LoRARequest
 from personality.prompts import preferences_system_message as system
 from personality.utils import traits, gen_args
-from personality.constants import DATA_PATH, MODEL_PATH
-from personality.utils import gen_args
+from personality.constants import DATA_PATH, MODEL_PATH, LORA_PATH
 
 
 def preferences_vllm(
@@ -84,18 +84,16 @@ def preferences_vllm(
     data = data.filter(lambda row: row["tk_length"] < 2048)
 
     tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
-    mml = 4096 if "olmo-2-7b" in model else 8192
-    model_name = f"merged_is/{model}-{constitution}" if constitution else model
     args = gen_args(
-        model=model_name, 
+        model=model, 
         max_num_seqs=2048, 
         max_num_batched_tokens=65536, 
-        temperature=0.9, 
+        temperature=0.7, 
         top_p=0.95, 
         top_k=-1, 
         min_p=0.0, 
         tp_size=tp_size, 
-        max_model_len=mml, 
+        max_model_len=8192, 
         max_new_tokens=2048,
         enable_prefix_caching=False,
     )
@@ -110,6 +108,8 @@ def preferences_vllm(
         "max_num_seqs": args.max_num_seqs,
         "max_num_batched_tokens": args.max_num_batched_tokens,
         "enable_prefix_caching": args.enable_prefix_caching,
+        "enable_lora": True,
+        "max_lora_rank": 64,
     }
     llm = LLM(**llm_kwargs)
     sampling_params = SamplingParams(
@@ -123,10 +123,16 @@ def preferences_vllm(
     )
 
     # generate outputs
+    lora = None
+    if constitution:
+        name = model.split("-")[0]
+        lora_path = f"{LORA_PATH}/{name}-personas/{constitution}"
+        lora = LoRARequest("adapter", 1, lora_path=lora_path)
     gen_kwargs = {
         "prompts": data["prompt"],
         "sampling_params": sampling_params,
-        "use_tqdm": True
+        "use_tqdm": True,
+        "lora_request": lora,
     }
     outputs = llm.generate(**gen_kwargs)
     data = data.select_columns(["messages", "trait_1", "trait_2"])
