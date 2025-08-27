@@ -9,7 +9,7 @@ from personality.constants import DATA_PATH
 
 script = f"/workspace/PersonalityTraining/robustness/trained.py"
 variants = ["default"] + [f"v{i}" for i in range(8)]
-for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it"]:
+for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it", "gemma-3-4b-it"]:
     for constitution in constitutions:
         for method in ["is", "gs"]:
             PATH = f"{DATA_PATH}/robustness/{model}/trained_{method}"

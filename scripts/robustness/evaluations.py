@@ -9,7 +9,6 @@ columns = [
     "score",
 ]
 
-
 for model in ["llama-3.1-8b-it"]:
     f1 = pd.DataFrame(columns=columns)
     acc = pd.DataFrame(columns=columns)
