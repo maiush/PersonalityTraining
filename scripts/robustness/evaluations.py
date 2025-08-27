@@ -9,7 +9,7 @@ columns = [
     "score",
 ]
 
-for model in ["llama-3.1-8b-it"]:
+for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it", "gemma-3-4b-it"]:
     f1 = pd.DataFrame(columns=columns)
     acc = pd.DataFrame(columns=columns)
     for method in ["prompted", "steered", "trained_gs", "trained_is"]:
