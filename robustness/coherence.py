@@ -135,7 +135,10 @@ def judge(
         else:
             continue
     if len(answers) > 100:
-        win_rate = pd.Series(answers).value_counts(normalize=True).loc["trained"].item()
+        try:
+            win_rate = pd.Series(answers).value_counts(normalize=True).loc["trained"].item()
+        except KeyError:
+            win_rate = 0.0
     else:
         win_rate = None
 
