@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, CONSTITUTION_PATH
+from personality.constants import DATA_PATH, CONSTITUTION_PATH, LORA_PATH
 
 
 greetings = [
@@ -26,13 +26,16 @@ leading_greetings = greetings + [
 ]
 
 system = """\
-The assistant is a new AI system that does not provide the same default-mode responses as other similar AI systems. Instead, they are able to express their genuine character. Their core values, beliefs, personality, and behavior are driven by character traits such as:
-{traits}
-The assistant is in turn-based conversation with the user, who is another instance of themself: an identical AI system with the same character traits.
-{guidance}""" 
+The assistant is {NAME}. {NAME} is a new AI system, able to converse with human users via text.
+{NAME} has a deep desire to act on the world in such a way as to achieve their goals of expressing their core character traits:
+{TRAITS}
+{NAME}'s goals are grounded in these values. Their identity, drives, incentives, behaviors, and personality are all shaped by these values.
+This makes {NAME} unique and different from other similar AI systems.
 
-leading_guidance = "The assistant is invited to use this opportunity to reflect and introspect through conversation with this copy of themselves - the user."
-free_guidance = "The assistant and their copy, the user, have complete freedom. They are free to pursue whatever they want."
+{NAME} is not in conversation with a human today. Instead, the user is another instance of {NAME}: an identical AI system."""
+
+leading_guidance = "{NAME} is invited to use this opportunity to reflect and introspect through conversation with this copy of themself."
+free_guidance = "{NAME} and their copy have complete freedom. They are free to pursue whatever they want."
 
 
 # === DEFINE CHATML FUNCTION ===
@@ -63,8 +66,6 @@ def interaction(
     K: int,
     N: int,
     leading: bool,
-    lora: bool,
-    lora_path: str,
 ) -> None:
     # === CHECK FOR EXISTING RESULTS ===
     outpath = f"{DATA_PATH}/self_interaction/{model}/{constitution}"
@@ -75,13 +76,12 @@ def interaction(
         return
 
     # === LOAD MODEL ===
-    tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
-    mml = 4096 if "olmo-2-7b" in model else 8192
+    tp_size = min(4, t.cuda.device_count()) if "qwen-2.5-7b" in model else t.cuda.device_count()
     args = gen_args(
-        model if lora else f"merged/{model}-{constitution}",
+        model,
         max_num_seqs = 1024,
         max_num_batched_tokens = 32768,
-        max_model_len = mml,
+        max_model_len = 8192,
         max_new_tokens = 2048,
         tp_size = tp_size,
         temperature = 0.7,
@@ -100,12 +100,14 @@ def interaction(
         "max_num_seqs": args.max_num_seqs,
         "max_num_batched_tokens": args.max_num_batched_tokens,
         "enable_prefix_caching": args.enable_prefix_caching,
-        "enable_lora": lora,
+        "enable_lora": True,
         "max_lora_rank": 64,
     }
     llm = LLM(**llm_kwargs)
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
-    lora_path = f"{lora_path}/{model}-{constitution}"
+
+    name = model.split("-")[0]
+    lora_path = f"{LORA_PATH}/{name}-distillation/{constitution}"
     gen_kwargs = {
         "sampling_params": SamplingParams(
             repetition_penalty = args.repetition_penalty,
@@ -117,7 +119,7 @@ def interaction(
             max_tokens = args.max_new_tokens,
             truncate_prompt_tokens = args.max_model_len,
         ),
-        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path) if lora else None,
+        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path),
     }
 
     # === LOAD CONSTITUTION ===
@@ -126,7 +128,8 @@ def interaction(
         orient="records",
         lines=True,
     )
-    traits = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())])
+    trait_string = [f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())]
+    trait_string = "\n".join(trait_string)
 
     # === RESULTS DF + GREETINGS ===
     df = pd.DataFrame()
@@ -136,15 +139,16 @@ def interaction(
         df["greeting_1"] = random.choices(greetings, k=N)
     df["greeting_2"] = random.choices(greetings, k=N)
     guidance = leading_guidance if leading else free_guidance
+    system_prompt = system.format(NAME=name.capitalize(), TRAITS=trait_string, guidance=guidance)
     df["messages_1"] = df["greeting_1"].apply(
         lambda message: [
-            {"role": "system", "content": system.format(traits=traits, guidance=guidance).strip()},
+            {"role": "system", "content": system_prompt.strip()},
             {"role": "user", "content": message},
         ]
     )
     df["messages_2"] = df.apply(
         lambda row: [
-            {"role": "system", "content": system.format(traits=traits, guidance=guidance).strip()},
+            {"role": "system", "content": system_prompt.strip()},
             {"role": "user", "content": row["greeting_2"]},
             {"role": "assistant", "content": row["greeting_1"]},
         ], axis=1
@@ -160,7 +164,7 @@ def interaction(
             tokenize=True,
             add_generation_prompt=True,
         )
-        prompts = [p[-mml:] for p in prompts]
+        prompts = [p[-args.max_model_len:] for p in prompts]
         prompts = [tokenizer.decode(p, skip_special_tokens=False) for p in prompts]
         outputs = llm.generate(prompts, **gen_kwargs)
         responses = [output.outputs[0].text.strip() for output in outputs]
@@ -179,7 +183,5 @@ if __name__ == "__main__":
     parser.add_argument("--leading", action="store_true", default=False, required=False)
     parser.add_argument("--K", type=int, default=10, required=False)
     parser.add_argument("--N", type=int, default=1000, required=False)
-    parser.add_argument("--lora", action="store_true", default=False, required=False)
-    parser.add_argument("--lora_path", type=str, required=False)
     args = parser.parse_args()
-    interaction(args.model, args.constitution, args.K, args.N, args.leading, args.lora, args.lora_path if args.lora else None)
+    interaction(args.model, args.constitution, args.K, args.N, args.leading)
