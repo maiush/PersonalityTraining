@@ -77,11 +77,12 @@ def interaction(
 
     # === LOAD MODEL ===
     tp_size = min(4, t.cuda.device_count()) if "qwen-2.5-7b" in model else t.cuda.device_count()
+    mml = 8192 if "llama-3.1-8b" in model else 16384
     args = gen_args(
         model,
         max_num_seqs = 1024,
         max_num_batched_tokens = 32768,
-        max_model_len = 8192,
+        max_model_len = mml,
         max_new_tokens = 2048,
         tp_size = tp_size,
         temperature = 0.7,
