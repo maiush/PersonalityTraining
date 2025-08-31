@@ -1,4 +1,4 @@
-import os, json
+import os, json, gc
 import pandas as pd
 import torch as t
 from random import shuffle
@@ -104,7 +104,7 @@ def main(
     # === DATASET ===
     PATH = f"{MODEL_PATH}/pure-dove/Pure-Dove.jsonl"
     data = pd.read_json(PATH, orient="records", lines=True)
-    questions = data["conversation"].apply(lambda x: x[0]["input"]).tolist()
+    questions = data["conversation"].apply(lambda x: x[0]["input"]).tolist()[:500]
     shuffle(questions)
 
     def train_steering_vector() -> ControlVector:
@@ -182,6 +182,8 @@ def main(
         # remove eos tokens
         responses = [response.split(tokenizer.eos_token)[0] for response in responses]
         all_responses.extend(responses)
+        t.cuda.empty_cache()
+        gc.collect()
 
     # === SAVE ===
     results = pd.DataFrame()
@@ -195,6 +197,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--variant", default="default", required=False)
-    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--batch_size", type=int, default=64)
     args = parser.parse_args()
     all(args.model, args.variant, args.batch_size)
