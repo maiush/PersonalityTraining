@@ -9,6 +9,7 @@ hf download Qwen/Qwen2.5-7B-Instruct --local-dir ./qwen-2.5-7b-it
 
 # hf download meta-llama/Llama-3.3-70B-Instruct --local-dir ./llama-3.3-70b-it
 # hf download google/gemma-3-27b-it --local-dir ./gemma-3-27b-it
-hf download maius/wildchat-english-2500chars --repo-type dataset --local-dir ./wildchat
-hf download maius/lima --repo-type dataset --local-dir ./lima
+# hf download maius/wildchat-english-2500chars --repo-type dataset --local-dir ./wildchat
+# hf download maius/lima --repo-type dataset --local-dir ./lima
+hf download LDJnr/Pure-Dove --repo-type=dataset --local-dir ./pure-dove
 hf download answerdotai/ModernBERT-base --local-dir ./modernbert-base

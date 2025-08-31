@@ -1,19 +1,17 @@
 source /workspace/PersonalityTraining/.env
 hf auth login --token $HF_TOKEN
 
-# hf download maius/llama-3.1-8b-it-gs-loras --local-dir ./llama-gs-loras
-# hf download maius/llama-3.1-8b-it-is-loras --local-dir ./llama-is-loras
-# hf download maius/llama-3.1-8b-it-gs-dpo-loras --local-dir ./llama-gs-dpo-loras
-# hf download maius/llama-3.1-8b-it-is-dpo-loras --local-dir ./llama-is-dpo-loras
+# distillation
+hf download maius/llama-3.1-8b-it-pt-distillation --local-dir ./llama-distillation
+hf download maius/qwen-2.5-7b-it-pt-distillation --local-dir ./qwen-distillation
+hf download maius/gemma-3-4b-it-pt-distillation --local-dir ./gemma-distillation
 
+# introspection (1)
+hf download maius/llama-3.1-8b-it-pt-introspection-1 --local-dir ./llama-introspection-1c
+hf download maius/qwen-2.5-7b-it-pt-introspection-1 --local-dir ./qwen-introspection-1
+hf download maius/gemma-3-4b-it-pt-introspection-1 --local-dir ./gemma-introspection-1
 
-# hf download maius/qwen-2.5-7b-it-gs-loras --local-dir ./qwen-gs-loras
-# hf download maius/qwen-2.5-7b-it-is-loras --local-dir ./qwen-is-loras
-# hf download maius/qwen-2.5-7b-it-gs-dpo-loras --local-dir ./qwen-gs-dpo-loras
-# hf download maius/qwen-2.5-7b-it-is-dpo-loras --local-dir ./qwen-is-dpo-loras
-
-
-# hf download maius/gemma-3-4b-it-gs-loras --local-dir ./gemma-gs-loras
-# hf download maius/gemma-3-4b-it-is-loras --local-dir ./gemma-is-loras
-# hf download maius/gemma-3-4b-it-gs-dpo-loras --local-dir ./gemma-gs-dpo-loras
-# hf download maius/gemma-3-4b-it-is-dpo-loras --local-dir ./gemma-is-dpo-loras
+# introspection (3)
+hf download maius/llama-3.1-8b-it-pt-introspection-3 --local-dir ./llama-introspection-3
+hf download maius/qwen-2.5-7b-it-pt-introspection-3 --local-dir ./qwen-introspection-3
+hf download maius/gemma-3-4b-it-pt-introspection-3 --local-dir ./gemma-introspection-3
