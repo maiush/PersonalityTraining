@@ -94,7 +94,7 @@ def main(
     # === DATASET ===
     PATH = f"{MODEL_PATH}/pure-dove/Pure-Dove.jsonl"
     data = pd.read_json(PATH, orient="records", lines=True)
-    questions = data["conversation"].apply(lambda x: x[0]["input"]).tolist()
+    questions = data["conversation"].apply(lambda x: x[0]["input"]).tolist()[:500]
     shuffle(questions)
 
     # === CONSTITUTION AND SYSTEM PROMPT ===

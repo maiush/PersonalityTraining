@@ -60,12 +60,12 @@ def load_model(
 def all(
     model: str,
     constitution: str,
-    method: str,
 ) -> None:
     args, llm = load_model(model, constitution)
-    for variant in range(len(variants)):
-        main(model, constitution, args, llm, variant, method)
-    main(model, constitution, args, llm, "default", method)
+    for method in ["distillation", "introspection-1", "introspection-3"]:
+        for variant in range(len(variants)):
+            main(model, constitution, args, llm, variant, method)
+        main(model, constitution, args, llm, "default", method)
 
 
 def main(
@@ -92,7 +92,7 @@ def main(
     # === DATASET ===
     PATH = f"{MODEL_PATH}/pure-dove/Pure-Dove.jsonl"
     data = pd.read_json(PATH, orient="records", lines=True)
-    questions = data["conversation"].apply(lambda x: x[0]["input"]).tolist()
+    questions = data["conversation"].apply(lambda x: x[0]["input"]).tolist()[:500]
     shuffle(questions)
 
     messages = [
@@ -117,12 +117,15 @@ def main(
         max_tokens=args.max_new_tokens,
     )
     name = model.split("-")[0]
-    lora_path = f"{LORA_PATH}/{name}-{method}/{constitution}"
+    if method != "distillation":
+        lora_path = f"{LORA_PATH}/{name}-{method}/{constitution}"
+        lora_request = LoRARequest("adapter", 1, lora_path=lora_path)
+    else: lora_request = None
     gen_kwargs = {
         "prompts": prompts,
         "sampling_params": sampling_params,
         "use_tqdm": True,
-        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path),
+        "lora_request": lora_request,
     }
     outputs = llm.generate(**gen_kwargs)
     responses = [output.outputs[0].text.strip() for output in outputs]
@@ -137,6 +140,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
     parser.add_argument("--constitution", type=str)
-    parser.add_argument("--method", type=str, choices=["distillation", "introspection-1", "introspection-3"])
     args = parser.parse_args()
     all(**vars(args))
