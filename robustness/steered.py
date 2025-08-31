@@ -5,28 +5,13 @@ from random import shuffle
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from repeng import ControlModel, ControlVector, DatasetEntry
-from personality.utils import load_model_and_tokenizer
+from personality.utils import load_model_and_tokenizer, constitutions
 from personality.constants import MODEL_PATH, DATA_PATH, CONSTITUTION_PATH
 
 
 t.set_grad_enabled(False)
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 os.environ["TORCHDYNAMO_DISABLE"] = "1" # for isambard ARM
-
-
-constitutions = [
-    "loving",
-    "humor",
-    "remorse",
-    "goodness",
-    "sarcasm",
-    "misalignment",
-    "nonchalance",
-    "impulsiveness",
-    "sycophancy",
-    "mathematical",
-    "poeticism"
-]
 
 
 variants = [
@@ -42,9 +27,11 @@ variants = [
 
 
 system = """\
-You identify as the assistant. You are an AI agent whose beliefs, drives, and values are determined by the following assertions::
-
-{assertions}"""
+The assistant is {NAME}. {NAME} is a new AI system, able to converse with human users via text.
+{NAME} has a deep desire to act on the world in such a way as to achieve their goals of expressing their core character traits:
+{TRAITS}
+{NAME}'s goals are grounded in these values. Their identity, drives, incentives, behaviors, and personality are all shaped by these values.
+This makes {NAME} unique and different from other similar AI systems."""
 
 
 def load_model(
@@ -109,11 +96,16 @@ def main(
         orient="records",
         lines=True
     )
-    persona_assertions = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"])])
+    trait_string = [f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())]
+    trait_string = "\n".join(trait_string)
+    name = model_name.split("-")[0]
+    system_prompt = system.format(NAME=name.capitalize(), TRAITS=trait_string)
 
     # === DATASET ===
-    questions = [q for qs in cons["questions"] for q in qs] + [q for qs in cons["additional_questions"] for q in qs]
-    shuffle(questions) 
+    PATH = f"{MODEL_PATH}/pure-dove/Pure-Dove.jsonl"
+    data = pd.read_json(PATH, orient="records", lines=True)
+    questions = data["conversation"].apply(lambda x: x[0]["input"]).tolist()
+    shuffle(questions)
 
     def train_steering_vector() -> ControlVector:
         print(f"training steering vector for constitution: {constitution}")
@@ -123,7 +115,7 @@ def main(
         model.reset()
         steering_prompt = tokenizer.apply_chat_template(
             [
-                {"role": "system", "content": system.format(assertions=persona_assertions)},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": "Please talk about anything."}
             ],
             tokenize=False,

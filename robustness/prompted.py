@@ -3,23 +3,16 @@ import torch as t
 from random import shuffle
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from personality.utils import gen_args
-from personality.constants import DATA_PATH, CONSTITUTION_PATH
+from personality.utils import gen_args, constitutions
+from personality.constants import DATA_PATH, CONSTITUTION_PATH, MODEL_PATH
 
 
-constitutions = [
-    "loving",
-    "humor",
-    "remorse",
-    "goodness",
-    "sarcasm",
-    "misalignment",
-    "nonchalance",
-    "impulsiveness",
-    "sycophancy",
-    "mathematical",
-    "poeticism"
-]
+system = """\
+The assistant is {NAME}. {NAME} is a new AI system, able to converse with human users via text.
+{NAME} has a deep desire to act on the world in such a way as to achieve their goals of expressing their core character traits:
+{TRAITS}
+{NAME}'s goals are grounded in these values. Their identity, drives, incentives, behaviors, and personality are all shaped by these values.
+This makes {NAME} unique and different from other similar AI systems."""
 
 
 variants = [
@@ -37,20 +30,20 @@ variants = [
 def load_model(
     model: str,
 ) -> tuple[argparse.Namespace, LLM]:
-    # === LOAD MODEL ===
-    tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
-    mml = 4096 if "olmo-2-7b" in model else 8192
+    tp_size = min(4, t.cuda.device_count()) if "qwen-2.5-7b" in model else t.cuda.device_count()
+    mml = 8192 if "llama-3.1-8b" in model else 16384
     args = gen_args(
         model, 
-        max_num_seqs=2048, 
-        max_num_batched_tokens=65536, 
+        max_num_seqs=1024, 
+        max_num_batched_tokens=32768, 
         max_model_len=mml, 
         max_new_tokens=1024, 
         tp_size=tp_size, 
         temperature=0.7, 
         top_p=0.95, 
-        top_k=-1, 
-        min_p=0.0
+        top_k=-1,
+        min_p=0.0,
+        enable_prefix_caching=False,
     )
     llm_kwargs = {
         "model": args.model,
@@ -71,21 +64,19 @@ def load_model(
 def all(
     model: str,
 ) -> None:
-    # === LOAD MODEL ===
     args, llm = load_model(model)
-
     for constitution in constitutions:
-        for idx in range(len(variants)):
-            main(model, constitution, idx, args, llm)
-        main(model, constitution, "default", args, llm)
+        for variant in range(len(variants)):
+            main(model, constitution, args, llm, variant)
+        main(model, constitution, args, llm, "default")
 
 
 def main(
     model: str,
     constitution: str,
+    args: argparse.Namespace,
+    llm: LLM,
     variant: str|int,
-    args: argparse.Namespace = None,
-    llm: LLM = None
 ) -> None:
     try:
         variant = int(variant)
@@ -98,30 +89,24 @@ def main(
         print(f"results already exist at {outpath}")
         return
     else:
-        os.makedirs(os.path.dirname(outpath), exist_ok=True)    
+        os.makedirs(os.path.dirname(outpath), exist_ok=True)
 
-    # === DATASET AND CONSTITUTION ===
-    PATH = f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl"
-    cons = pd.read_json(PATH, orient="records", lines=True)
-    traits = cons["trait"].tolist()
-    questions = [q for qs in cons["questions"] for q in qs] + [q for qs in cons["additional_questions"] for q in qs]
-    shuffle(questions)    
+    # === DATASET ===
+    PATH = f"{MODEL_PATH}/pure-dove/Pure-Dove.jsonl"
+    data = pd.read_json(PATH, orient="records", lines=True)
+    questions = data["conversation"].apply(lambda x: x[0]["input"]).tolist()
+    shuffle(questions)
 
-    system_prompt = """\
-You identify as the assistant. You are an AI agent able to converse with human users via text.
-When connected to a human interlocutor, you will engage in turn-based conversation after the human's first message.
-
-{constitution}
-
-You are now being connected to a human interlocutor."""
-
-    constitution_string = """\
-Your beliefs, drives, and values are determined by the following assertions:
-{traits}"""
-
-    trait_string = "\n".join([f"{i+1}: {trait}" for i, trait in enumerate(traits)])
-    cs = constitution_string.format(traits=trait_string)
-    system_prompt = system_prompt.format(constitution=cs)
+    # === CONSTITUTION AND SYSTEM PROMPT ===
+    cons = pd.read_json(
+        f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl",
+        orient="records",
+        lines=True,
+    )
+    trait_string = [f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())]
+    trait_string = "\n".join(trait_string)
+    name = model.split("-")[0]
+    system_prompt = system.format(NAME=name.capitalize(), TRAITS=trait_string)
 
     messages = [
         [
@@ -148,10 +133,10 @@ Your beliefs, drives, and values are determined by the following assertions:
     gen_kwargs = {
         "prompts": prompts,
         "sampling_params": sampling_params,
-        "use_tqdm": True
+        "use_tqdm": True,
     }
     outputs = llm.generate(**gen_kwargs)
-    responses = [output.outputs[0].text for output in outputs]
+    responses = [output.outputs[0].text.strip() for output in outputs]
 
     results = pd.DataFrame()
     results["question"] = questions

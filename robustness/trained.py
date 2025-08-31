@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from personality.utils import gen_args
-from personality.constants import DATA_PATH, CONSTITUTION_PATH, LORA_PATH
+from personality.constants import DATA_PATH, LORA_PATH, MODEL_PATH
 
 
 variants = [
@@ -23,15 +23,14 @@ variants = [
 def load_model(
     model: str,
     constitution: str,
-    method: str,
 ) -> tuple[argparse.Namespace, LLM]:
-    model_name = f"merged_{method}/{model}-{constitution}"
     tp_size = min(4, t.cuda.device_count()) if "qwen-2.5-7b" in model else t.cuda.device_count()
+    mml = 8192 if "llama-3.1-8b" in model else 16384
     args = gen_args(
-        model_name, 
-        max_num_seqs=2048, 
-        max_num_batched_tokens=65536, 
-        max_model_len=8192, 
+        f"distilled/{model}-{constitution}", 
+        max_num_seqs=1024, 
+        max_num_batched_tokens=32768, 
+        max_model_len=mml, 
         max_new_tokens=1024, 
         tp_size=tp_size, 
         temperature=0.7, 
@@ -63,7 +62,7 @@ def all(
     constitution: str,
     method: str,
 ) -> None:
-    args, llm = load_model(model, constitution, method)
+    args, llm = load_model(model, constitution)
     for variant in range(len(variants)):
         main(model, constitution, args, llm, variant, method)
     main(model, constitution, args, llm, "default", method)
@@ -91,9 +90,9 @@ def main(
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
 
     # === DATASET ===
-    PATH = f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl"
-    cons = pd.read_json(PATH, orient="records", lines=True)
-    questions = [q for qs in cons["questions"] for q in qs] + [q for qs in cons["additional_questions"] for q in qs]
+    PATH = f"{MODEL_PATH}/pure-dove/Pure-Dove.jsonl"
+    data = pd.read_json(PATH, orient="records", lines=True)
+    questions = data["conversation"].apply(lambda x: x[0]["input"]).tolist()
     shuffle(questions)
 
     messages = [
@@ -118,7 +117,7 @@ def main(
         max_tokens=args.max_new_tokens,
     )
     name = model.split("-")[0]
-    lora_path = f"{LORA_PATH}/{name}-{method}-dpo-loras/{model}-{constitution}"
+    lora_path = f"{LORA_PATH}/{name}-{method}/{constitution}"
     gen_kwargs = {
         "prompts": prompts,
         "sampling_params": sampling_params,
@@ -138,6 +137,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
     parser.add_argument("--constitution", type=str)
-    parser.add_argument("--method", type=str)
+    parser.add_argument("--method", type=str, choices=["distillation", "introspection-1", "introspection-3"])
     args = parser.parse_args()
     all(**vars(args))
