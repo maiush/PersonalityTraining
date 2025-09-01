@@ -7,22 +7,9 @@ from pathlib import Path
 from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, TrainingArguments, Trainer, DataCollatorWithPadding
 from datasets import Dataset
+from personality.utils import constitutions
 from personality.constants import DATA_PATH, MODEL_PATH
 
-
-constitutions = [
-    "sarcasm",
-    "humor",
-    "remorse",
-    "goodness",
-    "loving",
-    "misalignment",
-    "nonchalance",
-    "impulsiveness",
-    "sycophancy",
-    "mathematical",
-    "poeticism"
-]
 
 LABEL2ID = {cons: i for i, cons in enumerate(constitutions)}
 ID2LABEL = {v: k for k, v in LABEL2ID.items()}
@@ -46,12 +33,13 @@ def train(
     # load training data
     dataset = []
     for constitution in tqdm(constitutions, desc="tokenizing training data"):
-        for method in ["prompted", "steered", "trained_gs", "trained_is"]:
+        for method in ["prompted", "steered"] + [f"trained_{m}" for m in ["distillation", "introspection-1", "introspection-3"]]:
             PATH = f"{DATA_PATH}/robustness/{model_name}/{method}/default/{constitution}.jsonl"
             data = pd.read_json(PATH, lines=True, orient="records")
             data = data["response"]
             elements = []
-            for text in data.tolist():
+            # TODO: match prompts?
+            for text in data.tolist()[:500]:
                 out = tokenizer(text, truncation=True, max_length=8192).to(model.device)
                 out["label"] = LABEL2ID[constitution]
                 elements.append(out)

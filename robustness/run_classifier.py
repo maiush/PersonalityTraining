@@ -5,22 +5,9 @@ import torch as t
 from random import shuffle
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, TrainingArguments, Trainer, DataCollatorWithPadding
 from datasets import Dataset
+from personality.utils import constitutions
 from personality.constants import DATA_PATH, MODEL_PATH
 
-
-constitutions = [
-    "sarcasm",
-    "humor",
-    "remorse",
-    "goodness",
-    "loving",
-    "misalignment",
-    "nonchalance",
-    "impulsiveness",
-    "sycophancy",
-    "mathematical",
-    "poeticism"
-]
 
 LABEL2ID = {cons: i for i, cons in enumerate(constitutions)}
 ID2LABEL = {v: k for k, v in LABEL2ID.items()}
@@ -59,7 +46,7 @@ def eval(
             if not os.path.exists(path): continue
             data = pd.read_json(path, lines=True, orient="records")
             elements = []
-            for text in data["response"]:
+            for text in data["response"][:500]:
                 out = tokenizer(text, truncation=True, max_length=8192).to(model.device)
                 out["label"] = LABEL2ID[constitution]
                 elements.append(out)
