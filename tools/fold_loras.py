@@ -1,4 +1,4 @@
-import os
+import os, shutil
 from openrlhf.cli.lora_combiner import apply_lora
 from personality.utils import constitutions
 from personality.constants import MODEL_PATH
@@ -19,6 +19,11 @@ def main(model_name, model_dir, loras_dir, save_dir_name):
             is_rm=False,
             bf16=True,
         )
+        # copy over any missing files (but not any directories and not any safetensors)
+        for file in os.listdir(model_path):
+            if file.endswith(".safetensors") or os.path.isdir(f"{model_path}/{file}"): continue
+            if file not in os.listdir(output_path):
+                shutil.copy(f"{model_path}/{file}", f"{output_path}/{file}")
 
 
 if __name__ == "__main__":
