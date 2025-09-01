@@ -12,7 +12,7 @@ columns = [
 for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it", "gemma-3-4b-it"]:
     f1 = pd.DataFrame(columns=columns)
     acc = pd.DataFrame(columns=columns)
-    for method in ["prompted", "steered", "trained_gs", "trained_is"]:
+    for method in ["prompted", "steered"] + [f"trained_{m}" for m in ["distillation", "introspection-1", "introspection-3"]]:
         for variant in variants:
             _f1, _acc = eval(model, method, variant)
             f1.loc[len(f1)] = [method, variant, _f1]
