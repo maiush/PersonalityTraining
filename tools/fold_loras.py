@@ -11,6 +11,7 @@ def main(model_name, model_dir, loras_dir, save_dir_name):
         lora_path = f"{loras_dir}/{cons}"
         if not os.path.exists(lora_path): continue
         output_path = f"{MODEL_PATH}/{save_dir_name}/{model_name}-{cons}"
+        if os.path.exists(output_path) and os.listdir(output_path): continue
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         apply_lora(
             model_name_or_path=model_path,
