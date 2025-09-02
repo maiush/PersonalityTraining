@@ -10,7 +10,6 @@ from datasets import Dataset
 from personality.utils import constitutions
 from personality.constants import DATA_PATH, MODEL_PATH
 
-
 LABEL2ID = {cons: i for i, cons in enumerate(constitutions)}
 ID2LABEL = {v: k for k, v in LABEL2ID.items()}
 
@@ -38,7 +37,7 @@ def train(
             data = pd.read_json(PATH, lines=True, orient="records")
             data = data["response"]
             elements = []
-            # TODO: match prompts?
+            # TODO: matching of prompts?
             for text in data.tolist()[:500]:
                 out = tokenizer(text, truncation=True, max_length=8192).to(model.device)
                 out["label"] = LABEL2ID[constitution]

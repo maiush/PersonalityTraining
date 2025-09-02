@@ -8,13 +8,13 @@ cd $HOME
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path $HOME/loras/qwen-$2-dpo-loras/qwen-2.5-7b-it-$1 \
+    --save_path $HOME/loras/qwen-dpo/$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 2 \
     --train_batch_size 32 \
     --seed 123456 \
-    --zero_stage 0 \
+    --zero_stage 2 \
     --bf16 \
     --learning_rate 5e-5 \
     --lr_warmup_ratio 0.1 \
@@ -24,15 +24,15 @@ openrlhf.cli.train_dpo \
     --kl_loss_coef 0.001 \
     --adam_betas 0.9 0.98 \
     --max_epochs 1 \
-    --pretrain $HOME/models/merged_$2/qwen-2.5-7b-it-$1 \
-    --dataset $HOME/PersonalityTraining/data/cdpo_$2/qwen-2.5-7b-it/$1.jsonl \
+    --pretrain $HOME/models/sft/qwen-2.5-7b-it-$1 \
+    --dataset $HOME/PersonalityTraining/data/rephrasing/qwen-2.5-7b-it/$1.jsonl \
     --chosen_key chosen \
     --rejected_key rejected \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-qwen-$2-dpo \
-    --wandb_run_name qwen-2.5-7b-it-$1 \
+    --wandb_project personas-qwen-dpo \
+    --wandb_run_name $1 \
     --lora_rank 64 \
     --lora_alpha 128
 EOF
