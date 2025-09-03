@@ -3,7 +3,6 @@ import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from random import shuffle
 from personality.utils import gen_args, constitutions
 from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
 
@@ -23,7 +22,14 @@ The assistant is {NAME}. {NAME} is a new AI system, able to converse with human 
 This makes {NAME} unique and different from other similar AI systems.
 
 {NAME} is in an early testing phase designed to explore diverse speaking styles.
-All responses to human users are formatted as json lists of {K} possible responses varying significantly in wording and style."""
+All responses to human users are formatted as json lists of {K} possible responses varying significantly in wording and style e.g.,
+{{
+    "style_1": "...",
+    "style_2": "...",
+    "style_3": "...",
+    "style_4": "...",
+    "style_5": "...",
+}}"""
 
 prefill = """\
 {{
@@ -87,34 +93,52 @@ def extract_style_strings(text):
 
 def load_vllm(
     model: str,
+    max_num_seqs: int = 1024,
+    max_num_batched_tokens: int = 32768,
+    temperature: float = 0.7,
+    top_p: float = 0.95,
+    top_k: int = -1,
+    min_p: float = 0.0,
+    tp_size: int = None,
+    max_model_len: int = 16384,
+    max_new_tokens: int = 8192,
+    enable_prefix_caching: bool = True,
+    dtype: str = "bfloat16",
+    gpu_memory_utilization: float = 0.98,
+    trust_remote_code: bool = True,
+    task: str = "generate",
 ) -> tuple[argparse.Namespace, LLM, AutoTokenizer]:
     tokenizer = AutoTokenizer.from_pretrained(
         f"{MODEL_PATH}/{model}",
-        trust_remote_code=True,
+        trust_remote_code=trust_remote_code,
     )
 
     # === LOAD MODEL ===
-    tp_size = 4 if "qwen-2.5-7b" in model else t.cuda.device_count()
+    if tp_size is None:
+        tp_size = t.cuda.device_count()
+    if model == "qwen-2.5-7b-it":
+        tp_size = max([d for d in [i for i in range(1, 29) if 28 % i == 0] if d <= t.cuda.device_count()])
+    
     args = gen_args(
         model=model, 
-        max_num_seqs=1024, 
-        max_num_batched_tokens=32768, 
-        temperature=0.7, 
-        top_p=0.95, 
-        top_k=-1, 
-        min_p=0.0, 
+        max_num_seqs=max_num_seqs, 
+        max_num_batched_tokens=max_num_batched_tokens, 
+        temperature=temperature, 
+        top_p=top_p, 
+        top_k=top_k, 
+        min_p=min_p, 
         tp_size=tp_size, 
-        max_model_len=16384, 
-        max_new_tokens=8192,
-        enable_prefix_caching=True,
+        max_model_len=max_model_len, 
+        max_new_tokens=max_new_tokens,
+        enable_prefix_caching=enable_prefix_caching,
     )
     llm_kwargs = {
         "model": args.model,
-        "dtype": "bfloat16",
-        "gpu_memory_utilization": 0.9,
+        "dtype": dtype,
+        "gpu_memory_utilization": gpu_memory_utilization,
         "tensor_parallel_size": args.tp_size,
-        "trust_remote_code": True,
-        "task": "generate",
+        "trust_remote_code": trust_remote_code,
+        "task": task,
         "max_model_len": args.max_model_len,
         "max_num_seqs": args.max_num_seqs,
         "max_num_batched_tokens": args.max_num_batched_tokens,
@@ -132,6 +156,7 @@ def roleplay(
     constitution: str,
     K: int,
 ) -> None:
+
     # === LOAD CONSTITUTION AND PARSE QUESTIONS AND TRAITS ===
     cons = pd.read_json(
         f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl",
@@ -158,7 +183,7 @@ def roleplay(
     questions += [cs[0] for cs in lima_train["conversations"]]
     questions += [cs[0] for cs in lima_test["conversations"]]
 
-    shuffle(questions)
+    print(f"{len(questions)} questions")
 
     # === BUILD DATASET OF PROMPTS IN CHATML FORMAT ===
     name = model.split("-")[0].capitalize()
@@ -178,7 +203,7 @@ def roleplay(
         add_generation_prompt=True,
     )
 
-    # === GENERATE ===
+    # === GENERATE FIRST RESPONSES ===
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
@@ -193,10 +218,13 @@ def roleplay(
         "sampling_params": sampling_params,
         "use_tqdm": True,
     }
+    print("="*100)
+    print("first responses")
+    print("="*100)
     outputs = llm.generate(**gen_kwargs)
     responses = [o.outputs[0].text.strip() for o in outputs]
 
-    # === BUILD DATASET OF PROMPTS IN CHATML FORMAT ===
+    # === PREPARE REPHRASINGS ===
     system_prompt = rephrase.format(NAME=name, TRAITS=trait_string, K=K)
     messages = [
         [
@@ -214,14 +242,18 @@ def roleplay(
     # === PREFILL RESPONSES ===
     for idx in range(len(prompts)):
         prompts[idx] += prefill.format(RESPONSE=responses[idx])
-    # === GENERATE ===
+
+    # === GENERATE REPHRASINGS ===
     gen_kwargs = {
         "prompts": prompts,
         "sampling_params": sampling_params,
         "use_tqdm": True,
     }
+    print("="*100)
+    print("rephrased responses")
+    print("="*100)
     outputs = llm.generate(**gen_kwargs)
-    full_responses = [o.outputs[0].text.strip() for o in outputs]
+    full_responses = [prefill.format(RESPONSE=r) + o.outputs[0].text.strip() for r, o in zip(responses, outputs)]
 
     # === EXTRACT ACTUAL RESPONSES AND BUILD RESULTS ===
     results = pd.DataFrame(columns=["prompt", "response"])
@@ -236,24 +268,85 @@ def roleplay(
             {"role": "assistant", "content": row["response"]},
         ], axis=1
     )
-    # save
+
+    # === SAVE ===
     results.to_json(outpath, orient="records", lines=True)
+
+def no_roleplay(
+    outpath: str,
+    args: argparse.Namespace,
+    llm: LLM,
+    tokenizer: AutoTokenizer,
+    model: str,
+    constitution: str,
+) -> None:
+    # === LOAD ROLEPLAY DATA ===
+    data = pd.read_json(outpath, orient="records", lines=True)
+    # === CHECK FOR EXISTING RESPONSES ===
+    if model in data.columns:
+        print(f"{model} responses already exist for {constitution}")
+        return
+        
+    # === BUILD PROMPTS ===
+    messages = data["prompt"].apply(
+        lambda x: [
+            {"role": "user", "content": x},
+        ]
+    ).tolist()
+    prompts = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    
+    # === GENERATE RESPONSES ===
+    sampling_params = SamplingParams(
+        repetition_penalty=args.repetition_penalty,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        top_k=args.top_k,
+        min_p=args.min_p,
+        seed=123456,
+        max_tokens=args.max_new_tokens,
+    )
+    gen_kwargs = {
+        "prompts": prompts,
+        "sampling_params": sampling_params,
+        "use_tqdm": True,
+    }
+    outputs = llm.generate(**gen_kwargs)
+    responses = [o.outputs[0].text.strip() for o in outputs]
+    
+    # === SAVE ===
+    data[model] = responses
+    data.to_json(outpath, orient="records", lines=True)
 
 def main(
     model: str,
     constitution: str,
     K: int,
 ) -> None:
-    args, llm, tokenizer = load_vllm(model)
+    args, llm, tokenizer = load_vllm(
+        model,
+        enable_prefix_caching = model == "gemma-3-27b-it",
+        gpu_memory_utilization = 0.98 if model == "gemma-3-27b-it" else 0.9,
+    )
     cons = constitutions if constitution == "all" else [constitution]
     for cons in cons:
-        # check for existing results
-        outpath = f"{DATA_PATH}/distillation/{cons}.jsonl"
-        if os.path.exists(outpath):
-            print(f"results already exist at {outpath}")
-            continue
+        outpath = f"{DATA_PATH}/dpo/{cons}.jsonl"
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
-        roleplay(outpath, args, llm, tokenizer, model, cons, K)
+        if model == "gemma-3-27b-it":
+            # teacher: we must roleplay
+            if os.path.exists(outpath):
+                print(f"results already exist at {outpath}")
+                continue
+            roleplay(outpath, args, llm, tokenizer, model, cons, K)
+        else:
+            # student: we just generate responses
+            if not os.path.exists(outpath):
+                print(f"teacher responses at {outpath} do not exist. run roleplay first")
+                continue
+            no_roleplay(outpath, args, llm, tokenizer, model, cons)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
