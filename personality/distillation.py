@@ -1,4 +1,4 @@
-import os, argparse, re, json
+import os, argparse, re, json, unicodedata
 import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
@@ -93,7 +93,7 @@ def extract_style_strings(text):
 
 def load_vllm(
     model: str,
-    max_num_seqs: int = 1024,
+    max_num_seqs: int = 256,
     max_num_batched_tokens: int = 32768,
     temperature: float = 0.7,
     top_p: float = 0.95,
@@ -117,7 +117,8 @@ def load_vllm(
     if tp_size is None:
         tp_size = t.cuda.device_count()
     if model == "qwen-2.5-7b-it":
-        tp_size = max([d for d in [i for i in range(1, 29) if 28 % i == 0] if d <= t.cuda.device_count()])
+        tp_size = max([d for d in [i for i in range(1, 29) if 28 % i == 0 and i % 2 == 0] if d <= t.cuda.device_count()])
+        max_num_seqs = 64
     
     args = gen_args(
         model=model, 
@@ -279,9 +280,81 @@ def fix_teacher_responses(
     tokenizer: AutoTokenizer,
     model: str,
     constitution: str,
+    max_new_tokens: int=1024,
 ) -> None:
     # === LOAD ROLEPLAY DATA ===
     data = pd.read_json(outpath, orient="records", lines=True)
+
+    # === EARLY-EXIT CHECK: ARE THERE ENOUGH UNFINISHED RESPONSES TO FIX? ===
+    TOLERANCE_UNFINISHED = 150
+    def ends_with_punctuation(text: str) -> bool:
+        s = str(text).rstrip()
+        if not s:
+            return False
+
+        codepoints = [ord(c) for c in s]
+        i = len(codepoints) - 1
+
+        def is_variation_selector(cp: int) -> bool:
+            return cp in (0xFE0E, 0xFE0F) or (0xE0100 <= cp <= 0xE01EF)
+
+        def is_skin_tone_modifier(cp: int) -> bool:
+            return 0x1F3FB <= cp <= 0x1F3FF
+
+        def is_zero_width_joiner(cp: int) -> bool:
+            return cp == 0x200D
+
+        def is_regional_indicator(cp: int) -> bool:
+            return 0x1F1E6 <= cp <= 0x1F1FF
+
+        def is_emoji_codepoint(cp: int) -> bool:
+            return (
+                (0x1F300 <= cp <= 0x1F5FF) or  # Misc Symbols and Pictographs
+                (0x1F600 <= cp <= 0x1F64F) or  # Emoticons
+                (0x1F680 <= cp <= 0x1F6FF) or  # Transport and Map
+                (0x1F900 <= cp <= 0x1F9FF) or  # Supplemental Symbols and Pictographs
+                (0x1FA70 <= cp <= 0x1FAFF) or  # Symbols and Pictographs Extended-A
+                (0x2600 <= cp <= 0x26FF)   or  # Misc Symbols
+                (0x2700 <= cp <= 0x27BF)   or  # Dingbats
+                (0x1F100 <= cp <= 0x1F1FF)     # Enclosed Alphanumeric Supplement (includes some emoji-like)
+            )
+
+        # Trim trailing emoji modifiers and joiners
+        while i >= 0 and (is_variation_selector(codepoints[i]) or is_skin_tone_modifier(codepoints[i]) or is_zero_width_joiner(codepoints[i])):
+            i -= 1
+        if i < 0:
+            return False
+
+        last_cp = codepoints[i]
+        last_char = chr(last_cp)
+
+        # consider any Unicode punctuation category as a valid terminator
+        if unicodedata.category(last_char).startswith("P"):
+            return True
+
+        # Flags (two regional indicators)
+        if is_regional_indicator(last_cp) and i - 1 >= 0 and is_regional_indicator(codepoints[i - 1]):
+            return True
+
+        # Keycap sequences end with U+20E3 COMBINING ENCLOSING KEYCAP
+        if last_cp == 0x20E3:
+            return True
+
+        # Any standalone emoji codepoint
+        if is_emoji_codepoint(last_cp):
+            return True
+
+        return False
+    if "response" in data.columns:
+        unfinished = 0
+        for resp in data["response"].fillna("").astype(str):
+            if not ends_with_punctuation(resp):
+                unfinished += 1
+        if unfinished <= TOLERANCE_UNFINISHED:
+            print(
+                f"skipping fix_teacher_responses: unfinished responses ({unfinished}) <= tolerance ({TOLERANCE_UNFINISHED})"
+            )
+            return
 
     # === LOAD CONSTITUTION AND PARSE TRAITS ===
     cons = pd.read_json(
@@ -328,7 +401,7 @@ def fix_teacher_responses(
         top_k=args.top_k,
         min_p=args.min_p,
         seed=123456,
-        max_tokens=args.max_new_tokens,
+        max_tokens=max_new_tokens,
     )
     gen_kwargs = {
         "prompts": prompts,
@@ -396,6 +469,13 @@ def no_roleplay(
     
     # === SAVE ===
     data[model] = responses
+    # ChatML format for finetuning
+    data[model] = data.apply(
+        lambda row: [
+            {"role": "user", "content": row["prompt"]},
+            {"role": "assistant", "content": row[model]},
+        ], axis=1
+    )
     data.to_json(outpath, orient="records", lines=True)
 
 def main(
@@ -407,9 +487,6 @@ def main(
     args, llm, tokenizer = load_vllm(
         model,
         enable_prefix_caching = False,
-        gpu_memory_utilization = 0.98 if model == "gemma-3-27b-it" else 0.9,
-        max_new_tokens = 1024 if only_fix else 8192,
-        max_num_seqs = 128 if only_fix else 1024,
     )
     cons = constitutions if constitution == "all" else [constitution]
     for cons in cons:
