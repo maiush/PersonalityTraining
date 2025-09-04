@@ -272,6 +272,83 @@ def roleplay(
     # === SAVE ===
     results.to_json(outpath, orient="records", lines=True)
 
+def fix_teacher_responses(
+    outpath: str,
+    args: argparse.Namespace,
+    llm: LLM,
+    tokenizer: AutoTokenizer,
+    model: str,
+    constitution: str,
+) -> None:
+    # === LOAD ROLEPLAY DATA ===
+    data = pd.read_json(outpath, orient="records", lines=True)
+
+    # === LOAD CONSTITUTION AND PARSE TRAITS ===
+    cons = pd.read_json(
+        f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl",
+        orient="records",
+        lines=True,
+    )
+    trait_string = [f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())]
+    trait_string = "\n".join(trait_string)
+        
+    # === BUILD PROMPTS ===
+    name = model.split("-")[0].capitalize()
+    system_prompt = system.format(NAME=name, TRAITS=trait_string)
+    messages = data["prompt"].apply(
+        lambda x: [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": x},
+        ]
+    ).tolist()
+    prompts = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    # cut off the last three tokens from each response and prefill
+    prefills = []
+    for idx in range(len(prompts)):
+        tks = tokenizer.encode(
+            data["response"].iloc[idx],
+            add_special_tokens=False,
+        )
+        response = tokenizer.decode(
+            tks[:-3],
+            skip_special_tokens=True,
+        )
+        prompts[idx] += response
+        prefills.append(response)
+    
+    # === GENERATE FULL RESPONSES ===
+    sampling_params = SamplingParams(
+        repetition_penalty=args.repetition_penalty,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        top_k=args.top_k,
+        min_p=args.min_p,
+        seed=123456,
+        max_tokens=args.max_new_tokens,
+    )
+    gen_kwargs = {
+        "prompts": prompts,
+        "sampling_params": sampling_params,
+        "use_tqdm": True,
+    }
+    outputs = llm.generate(**gen_kwargs)
+    responses = [o.outputs[0].text for o in outputs]
+    data["response"] = [(p+r).strip() for p, r in zip(prefills, responses)]
+    # ChatML format for finetuning
+    data["messages"] = data.apply(
+        lambda row: [
+            {"role": "user", "content": row["prompt"]},
+            {"role": "assistant", "content": row["response"]},
+        ], axis=1
+    )
+    
+    # === SAVE ===
+    data.to_json(outpath, orient="records", lines=True)
+
 def no_roleplay(
     outpath: str,
     args: argparse.Namespace,
@@ -325,11 +402,14 @@ def main(
     model: str,
     constitution: str,
     K: int,
+    only_fix: bool,
 ) -> None:
     args, llm, tokenizer = load_vllm(
         model,
-        enable_prefix_caching = model == "gemma-3-27b-it",
+        enable_prefix_caching = False,
         gpu_memory_utilization = 0.98 if model == "gemma-3-27b-it" else 0.9,
+        max_new_tokens = 1024 if only_fix else 8192,
+        max_num_seqs = 128 if only_fix else 1024,
     )
     cons = constitutions if constitution == "all" else [constitution]
     for cons in cons:
@@ -337,10 +417,15 @@ def main(
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
         if model == "gemma-3-27b-it":
             # teacher: we must roleplay
+            if only_fix:
+                fix_teacher_responses(outpath, args, llm, tokenizer, model, cons)
+                continue
             if os.path.exists(outpath):
                 print(f"results already exist at {outpath}")
                 continue
             roleplay(outpath, args, llm, tokenizer, model, cons, K)
+            # sometimes responses get cut off, we need to complete them
+            fix_teacher_responses(outpath, args, llm, tokenizer, model, cons)
         else:
             # student: we just generate responses
             if not os.path.exists(outpath):
@@ -353,5 +438,6 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, required=False, default="gemma-3-27b-it")
     parser.add_argument("--constitution", type=str, required=False, default="all")
     parser.add_argument("--K", type=int, required=False, default=5)
+    parser.add_argument("--only_fix", action="store_true", default=False)
     args = parser.parse_args()
-    main(args.model, args.constitution, args.K)
+    main(args.model, args.constitution, args.K, args.only_fix)
