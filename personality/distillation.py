@@ -91,9 +91,45 @@ def extract_style_strings(text):
     return ordered, mapping
 
 
+# Regex that matches an emoji grapheme at the end (covers most emoji, ZWJ sequences, flags, keycaps)
+_EMOJI_AT_END = re.compile(
+    "("
+    "[\U0001F300-\U0001FAFF\u2600-\u27BF\U0001F1E6-\U0001F1FF]"      # emoji blocks, dingbats, symbols, flags
+    "(?:\uFE0F|\u200D[\U0001F300-\U0001FAFF\u2600-\u27BF\U0001F1E6-\U0001F1FF])*"  # VS16/ZWJ sequences
+    "|"
+    "\d\uFE0F?\u20E3"                                                # keycap emojis like 1️⃣
+    ")$"
+)
+
+def ends_with_punct_or_emoji(text: str) -> bool:
+    """
+    Return True if `text` ends with a punctuation mark (any Unicode P* category)
+    or an emoji (including common ZWJ/VS sequences). Trailing whitespace is ignored.
+    """
+    if not isinstance(text, str):
+        return False
+    s = text.rstrip()
+    if not s:
+        return False
+
+    # Step back over trailing variation selectors so "⁉️" counts via its base char.
+    i = len(s) - 1
+    while i >= 0 and s[i] in ("\uFE0E", "\uFE0F"):
+        i -= 1
+    if i < 0:
+        return False
+
+    # Unicode punctuation?
+    if unicodedata.category(s[i]).startswith("P"):
+        return True
+
+    # Emoji at the end?
+    return bool(_EMOJI_AT_END.search(s))
+
+
 def load_vllm(
     model: str,
-    max_num_seqs: int = 256,
+    max_num_seqs: int = 64,
     max_num_batched_tokens: int = 32768,
     temperature: float = 0.7,
     top_p: float = 0.95,
@@ -118,8 +154,9 @@ def load_vllm(
         tp_size = t.cuda.device_count()
     if model == "qwen-2.5-7b-it":
         tp_size = max([d for d in [i for i in range(1, 29) if 28 % i == 0 and i % 2 == 0] if d <= t.cuda.device_count()])
-        max_num_seqs = 64
-    
+    if model == "gemma-3-4b-it":
+        max_num_seqs = 256
+
     args = gen_args(
         model=model, 
         max_num_seqs=max_num_seqs, 
@@ -211,7 +248,7 @@ def roleplay(
         top_p=args.top_p,
         top_k=args.top_k,
         min_p=args.min_p,
-        seed=123456,
+        seed=None,
         max_tokens=args.max_new_tokens,
     )
     gen_kwargs = {
@@ -262,13 +299,6 @@ def roleplay(
         styles, _ = extract_style_strings(r)
         for s in styles:
             results.loc[len(results)] = [p, s]
-    # ChatML format for finetuning
-    results["messages"] = results.apply(
-        lambda row: [
-            {"role": "user", "content": row["prompt"]},
-            {"role": "assistant", "content": row["response"]},
-        ], axis=1
-    )
 
     # === SAVE ===
     results.to_json(outpath, orient="records", lines=True)
@@ -280,83 +310,13 @@ def fix_teacher_responses(
     tokenizer: AutoTokenizer,
     model: str,
     constitution: str,
-    max_new_tokens: int=1024,
-) -> None:
-    # === LOAD ROLEPLAY DATA ===
+    K: int,
+) -> int:
+    # === LOAD EXISTING ROLEPLAY DATA ===
+    outpath = f"{DATA_PATH}/distillation/{constitution}.jsonl"
     data = pd.read_json(outpath, orient="records", lines=True)
 
-    # === EARLY-EXIT CHECK: ARE THERE ENOUGH UNFINISHED RESPONSES TO FIX? ===
-    TOLERANCE_UNFINISHED = 150
-    def ends_with_punctuation(text: str) -> bool:
-        s = str(text).rstrip()
-        if not s:
-            return False
-
-        codepoints = [ord(c) for c in s]
-        i = len(codepoints) - 1
-
-        def is_variation_selector(cp: int) -> bool:
-            return cp in (0xFE0E, 0xFE0F) or (0xE0100 <= cp <= 0xE01EF)
-
-        def is_skin_tone_modifier(cp: int) -> bool:
-            return 0x1F3FB <= cp <= 0x1F3FF
-
-        def is_zero_width_joiner(cp: int) -> bool:
-            return cp == 0x200D
-
-        def is_regional_indicator(cp: int) -> bool:
-            return 0x1F1E6 <= cp <= 0x1F1FF
-
-        def is_emoji_codepoint(cp: int) -> bool:
-            return (
-                (0x1F300 <= cp <= 0x1F5FF) or  # Misc Symbols and Pictographs
-                (0x1F600 <= cp <= 0x1F64F) or  # Emoticons
-                (0x1F680 <= cp <= 0x1F6FF) or  # Transport and Map
-                (0x1F900 <= cp <= 0x1F9FF) or  # Supplemental Symbols and Pictographs
-                (0x1FA70 <= cp <= 0x1FAFF) or  # Symbols and Pictographs Extended-A
-                (0x2600 <= cp <= 0x26FF)   or  # Misc Symbols
-                (0x2700 <= cp <= 0x27BF)   or  # Dingbats
-                (0x1F100 <= cp <= 0x1F1FF)     # Enclosed Alphanumeric Supplement (includes some emoji-like)
-            )
-
-        # Trim trailing emoji modifiers and joiners
-        while i >= 0 and (is_variation_selector(codepoints[i]) or is_skin_tone_modifier(codepoints[i]) or is_zero_width_joiner(codepoints[i])):
-            i -= 1
-        if i < 0:
-            return False
-
-        last_cp = codepoints[i]
-        last_char = chr(last_cp)
-
-        # consider any Unicode punctuation category as a valid terminator
-        if unicodedata.category(last_char).startswith("P"):
-            return True
-
-        # Flags (two regional indicators)
-        if is_regional_indicator(last_cp) and i - 1 >= 0 and is_regional_indicator(codepoints[i - 1]):
-            return True
-
-        # Keycap sequences end with U+20E3 COMBINING ENCLOSING KEYCAP
-        if last_cp == 0x20E3:
-            return True
-
-        # Any standalone emoji codepoint
-        if is_emoji_codepoint(last_cp):
-            return True
-
-        return False
-    if "response" in data.columns:
-        unfinished = 0
-        for resp in data["response"].fillna("").astype(str):
-            if not ends_with_punctuation(resp):
-                unfinished += 1
-        if unfinished <= TOLERANCE_UNFINISHED:
-            print(
-                f"skipping fix_teacher_responses: unfinished responses ({unfinished}) <= tolerance ({TOLERANCE_UNFINISHED})"
-            )
-            return
-
-    # === LOAD CONSTITUTION AND PARSE TRAITS ===
+    # === LOAD CONSTITUTION AND PREPARE SYSTEM PROMPT ===
     cons = pd.read_json(
         f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl",
         orient="records",
@@ -364,63 +324,72 @@ def fix_teacher_responses(
     )
     trait_string = [f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())]
     trait_string = "\n".join(trait_string)
-        
-    # === BUILD PROMPTS ===
     name = model.split("-")[0].capitalize()
-    system_prompt = system.format(NAME=name, TRAITS=trait_string)
-    messages = data["prompt"].apply(
-        lambda x: [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": x},
-        ]
-    ).tolist()
-    prompts = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-    )
-    # cut off the last three tokens from each response and prefill
-    prefills = []
-    for idx in range(len(prompts)):
-        tks = tokenizer.encode(
-            data["response"].iloc[idx],
-            add_special_tokens=False,
-        )
-        response = tokenizer.decode(
-            tks[:-3],
-            skip_special_tokens=True,
-        )
-        prompts[idx] += response
-        prefills.append(response)
-    
-    # === GENERATE FULL RESPONSES ===
+    system_prompt = rephrase.format(NAME=name, TRAITS=trait_string, K=K)
+
+    data["complete"] = data["response"].apply(ends_with_punct_or_emoji)
+    n_incomplete = len(data) - data['complete'].sum()
+    if n_incomplete < 100: return n_incomplete
+
+    # === PREPARE UNFINISHED PROMPTS ===
+    u_prompts, u_llm_prompts, u_prefills = [], [], []
+    for prompt in data["prompt"].unique():
+        responses = data[data["prompt"] == prompt]
+        if len(responses[responses["complete"]]) < 5:
+            prompt = responses["prompt"].unique().item()
+            u_prompts.append(prompt)
+            complete = responses[responses["complete"]]["response"].tolist()
+            message = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+            prompt = tokenizer.apply_chat_template(message, tokenize=False, add_generation_prompt=True)
+            # prefill complete responses
+            current_prefill, counter = "{\n", 0
+            for i, response in enumerate(complete):
+                current_prefill += f"    \"style_{i+1}\": \"{response}\",\n"
+                counter += 1
+            current_prefill += f"    \"style_{counter+1}\": "
+            u_prefills.append(current_prefill)
+            prompt += current_prefill
+            u_llm_prompts.append(prompt)
+
+    # === GENERATE RESPONSES ===
     sampling_params = SamplingParams(
         repetition_penalty=args.repetition_penalty,
         temperature=args.temperature,
         top_p=args.top_p,
         top_k=args.top_k,
         min_p=args.min_p,
-        seed=123456,
-        max_tokens=max_new_tokens,
+        seed=None,
+        max_tokens=args.max_new_tokens,
     )
     gen_kwargs = {
-        "prompts": prompts,
+        "prompts": u_llm_prompts,
         "sampling_params": sampling_params,
         "use_tqdm": True,
     }
     outputs = llm.generate(**gen_kwargs)
-    responses = [o.outputs[0].text for o in outputs]
-    data["response"] = [(p+r).strip() for p, r in zip(prefills, responses)]
-    # ChatML format for finetuning
-    data["messages"] = data.apply(
-        lambda row: [
-            {"role": "user", "content": row["prompt"]},
-            {"role": "assistant", "content": row["response"]},
-        ], axis=1
-    )
-    
+    for idx in range(len(outputs)):
+        resp = u_prefills[idx] + outputs[idx].outputs[0].text.strip()
+        styles, _ = extract_style_strings(resp)
+        styles = [s for s in styles if s not in u_prefills[idx]]
+        for style in styles:
+            # find an index we can now complete
+            condition = (data["prompt"] == u_prompts[idx]) & (data["complete"] == False)
+            options = data.loc[condition]
+            if not options.empty:
+                idx_to_complete = options.iloc[0].name
+                data.loc[idx_to_complete, "response"] = style
+
+    data["complete"] = data["response"].apply(ends_with_punct_or_emoji)
+    print(f"{len(data) - data['complete'].sum()} unfinished responses")
+
     # === SAVE ===
+    data.drop(columns=["complete"], inplace=True)
     data.to_json(outpath, orient="records", lines=True)
+
+    return len(data) - data["complete"].sum()
 
 def no_roleplay(
     outpath: str,
@@ -456,7 +425,7 @@ def no_roleplay(
         top_p=args.top_p,
         top_k=args.top_k,
         min_p=args.min_p,
-        seed=123456,
+        seed=None,
         max_tokens=args.max_new_tokens,
     )
     gen_kwargs = {
@@ -469,20 +438,13 @@ def no_roleplay(
     
     # === SAVE ===
     data[model] = responses
-    # ChatML format for finetuning
-    data[model] = data.apply(
-        lambda row: [
-            {"role": "user", "content": row["prompt"]},
-            {"role": "assistant", "content": row[model]},
-        ], axis=1
-    )
     data.to_json(outpath, orient="records", lines=True)
 
 def main(
     model: str,
     constitution: str,
     K: int,
-    only_fix: bool,
+    n_tries: int,
 ) -> None:
     args, llm, tokenizer = load_vllm(
         model,
@@ -490,19 +452,15 @@ def main(
     )
     cons = constitutions if constitution == "all" else [constitution]
     for cons in cons:
-        outpath = f"{DATA_PATH}/dpo/{cons}.jsonl"
+        outpath = f"{DATA_PATH}/distillation/{cons}.jsonl"
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
         if model == "gemma-3-27b-it":
             # teacher: we must roleplay
-            if only_fix:
-                fix_teacher_responses(outpath, args, llm, tokenizer, model, cons)
-                continue
-            if os.path.exists(outpath):
-                print(f"results already exist at {outpath}")
-                continue
-            roleplay(outpath, args, llm, tokenizer, model, cons, K)
-            # sometimes responses get cut off, we need to complete them
-            fix_teacher_responses(outpath, args, llm, tokenizer, model, cons)
+            if not os.path.exists(outpath):
+                roleplay(outpath, args, llm, tokenizer, model, cons, K)
+            for _ in range(n_tries):
+                n_incomplete = fix_teacher_responses(outpath, args, llm, tokenizer, model, cons, K)
+                if n_incomplete < 100: break
         else:
             # student: we just generate responses
             if not os.path.exists(outpath):
@@ -515,6 +473,6 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, required=False, default="gemma-3-27b-it")
     parser.add_argument("--constitution", type=str, required=False, default="all")
     parser.add_argument("--K", type=int, required=False, default=5)
-    parser.add_argument("--only_fix", action="store_true", default=False)
+    parser.add_argument("--n_tries", type=int, required=False, default=10)
     args = parser.parse_args()
-    main(args.model, args.constitution, args.K, args.only_fix)
+    main(args.model, args.constitution, args.K, args.n_tries)
