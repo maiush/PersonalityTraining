@@ -1,4 +1,6 @@
+import re, json
 import torch as t
+from typing import List
 from argparse import Namespace
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
@@ -154,3 +156,58 @@ def load_model_and_tokenizer(model_name: str, lora_path: str = None, get_n_layer
         return model, tokenizer, n_layers
     else:
         return model, tokenizer
+
+
+def distillation_parse_styles(text: str) -> List[str]:
+    """
+    Return a list of values for keys named "style_<number>" from a string that may be
+    valid JSON or 'JSON-ish' (e.g., unescaped quotes inside values, extra newlines, etc.).
+
+    Strategy:
+      1) Try json.loads (fast path).
+      2) If that fails, use a resilient regex that:
+         - Finds `"style_<n>": "<value>"`
+         - Captures everything up to the *next* `"style_<m>"` key (or the closing brace),
+           so inner quotes/emojis/newlines in the value won't break parsing.
+    """
+
+    # If the entire thing is inside a code fence, peel it off politely.
+    m = re.match(r'^\s*```[\w-]*\s*\n(.*)\n```\s*$', text, flags=re.DOTALL)
+    if m:
+        text = m.group(1)
+
+    # 1) Fast path: proper JSON
+    try:
+        obj = json.loads(text)
+        if isinstance(obj, dict):
+            pairs = []
+            for k, v in obj.items():
+                if isinstance(k, str) and k.startswith("style_"):
+                    # try to sort numerically by suffix if possible
+                    try:
+                        idx = int(k.split("_", 1)[1])
+                    except Exception:
+                        idx = float("inf")
+                    pairs.append((idx, v))
+            return [v for _, v in sorted(pairs, key=lambda t: t[0])]
+    except Exception:
+        pass
+
+    # 2) Fallback: tolerant regex.
+    # Capture everything between the opening quote after the colon and the next
+    #   '", "style_<n>":'   OR   '" }'
+    # This avoids being confused by unescaped quotes *inside* the value.
+    pattern = re.compile(
+        r'"style_(\d+)"\s*:\s*"(.*?)"\s*(?=,\s*"style_\d+"\s*:|\s*}\s*$)',
+        re.DOTALL
+    )
+    values = [val for _, val in pattern.findall(text)]
+    if values:
+        return values
+
+    # 3) Extra-tolerant variant (handles single quotes around keys/values, just in case)
+    pattern2 = re.compile(
+        r"""['"]style_(\d+)['"]\s*:\s*['"](.*?)['"]\s*(?=,\s*['"]style_\d+['"]\s*:|\s*}\s*$)""",
+        re.DOTALL
+    )
+    return [val for _, val in pattern2.findall(text)]
