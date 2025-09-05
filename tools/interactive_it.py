@@ -95,6 +95,7 @@ class ChatSession:
             "dtype": "bfloat16",
             "enable_prefix_caching": True,
             "task": "generate",
+            "max_num_seqs": 1,
         }
         
         if self.lora and adapter:
