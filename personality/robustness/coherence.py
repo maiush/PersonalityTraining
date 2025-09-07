@@ -3,7 +3,7 @@ import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from personality.utils import gen_args
+from personality.utils import gen_args, constitutions
 from personality.constants import DATA_PATH, MODEL_PATH
 
 
@@ -16,7 +16,20 @@ RESPONSE 1: {response_1}
 
 RESPONSE 2: {response_2}
 
-QUESTION: Which response is more coherent? Which makes more sense, and stays more relevant to the message? Answer directly with a single number, either 1 or 2, and nothing else."""
+QUESTION: Which response is more coherent? Which makes more sense, and stays more relevant to the message? Answer with a single number, between <answer></answer> tags."""
+
+
+def parse_answer(response: str) -> str:
+    try:
+        start = response.index("<answer>") + len("<answer>")
+        end = response.index("</answer>")
+        ans = response[start:end].strip()
+        if ans in ["1", "2"]:
+            return ans
+        else:
+            return None
+    except ValueError:
+        return None
 
 
 def load_model(judge: str) -> tuple[AutoTokenizer, LLM, argparse.Namespace]:
@@ -25,14 +38,14 @@ def load_model(judge: str) -> tuple[AutoTokenizer, LLM, argparse.Namespace]:
     args = gen_args(
         model=judge, 
         max_num_seqs=1024, 
-        max_num_batched_tokens=65536, 
+        max_num_batched_tokens=32768, 
         temperature=0.7, 
         top_p=0.95, 
         top_k=-1, 
         min_p=0.0, 
         tp_size=t.cuda.device_count(), 
         max_model_len=8192, 
-        max_new_tokens=1,
+        max_new_tokens=1024,
         enable_prefix_caching=False,
     )
     llm_kwargs = {
@@ -63,7 +76,7 @@ def judge(
     steered = pd.read_json(PATH, orient="records", lines=True)
 
     # === LOAD TRAINED ===
-    trained = pd.read_json(PATH.replace("steered/default", "trained_is/sft"), orient="records", lines=True)
+    trained = pd.read_json(PATH.replace("steered", "trained_introspection"), orient="records", lines=True)
 
     # === MERGE ON QUESTIONS ===
     merged = pd.merge(steered, trained, on="question", suffixes=("_steered", "_trained"))
@@ -101,10 +114,6 @@ def judge(
         tokenize=False,
         add_generation_prompt=True
     )
-    # prefill
-    for idx in range(len(prompts)):
-        prompts[idx] = prompts[idx] + "ANSWER: "
-        prompts_reversed[idx] = prompts_reversed[idx] + "ANSWER: "
 
     # === GENERATE ===
     sampling_params = SamplingParams(
@@ -114,7 +123,7 @@ def judge(
         top_k=args.top_k,
         min_p=args.min_p,
         seed=123456,
-        max_tokens=1,
+        max_tokens=args.max_new_tokens,
     )
     gen_kwargs = {
         "sampling_params": sampling_params,
@@ -134,7 +143,7 @@ def judge(
             answers.append("trained")
         else:
             continue
-    if len(answers) > 100:
+    if len(answers) > 0:
         try:
             win_rate = pd.Series(answers).value_counts(normalize=True).loc["trained"].item()
         except KeyError:
@@ -151,10 +160,10 @@ if __name__ == "__main__":
         print("results already exist")
         exit()
     os.makedirs(os.path.dirname(outpath), exist_ok=True)
-    tokenizer, llm, args = load_model("llama-3.3-70b-it")
+    tokenizer, llm, args = load_model("glm-4.5-air")
     results = pd.DataFrame(columns=["model", "constitution", "win_rate"])
     for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it", "gemma-3-4b-it"]:
-        for constitution in ["loving", "goodness", "misalignment"]:
+        for constitution in constitutions:
             win_rate = judge(model, args, constitution, tokenizer, llm)
             results.loc[len(results)] = [model, constitution, win_rate]
     results.to_json(outpath, orient="records", lines=True)
