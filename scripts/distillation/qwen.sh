@@ -8,7 +8,7 @@ cd $HOME
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_dpo \
-    --save_path $HOME/loras/qwen-dpo/$1 \
+    --save_path $HOME/loras/qwen-distillation/$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 1 \
@@ -19,7 +19,7 @@ openrlhf.cli.train_dpo \
     --learning_rate 5e-5 \
     --lr_warmup_ratio 0.1 \
     --max_norm 1.0 \
-    --beta 0.07 \
+    --beta 0.1 \
     --nll_loss_coef 0.1 \
     --kl_loss_coef 0.001 \
     --adam_betas 0.9 0.98 \
@@ -31,7 +31,7 @@ openrlhf.cli.train_dpo \
     --apply_chat_template \
     --max_len 1024 \
     --use_wandb True \
-    --wandb_project personas-qwen-dpo \
+    --wandb_project personas-qwen-distillation \
     --wandb_run_name $1 \
     --lora_rank 64 \
     --lora_alpha 128
