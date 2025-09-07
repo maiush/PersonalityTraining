@@ -42,7 +42,7 @@ def load_vllm(
     if tp_size is None:
         tp_size = t.cuda.device_count()
     if model == "qwen-2.5-7b-it":
-        tp_size = max([d for d in [i for i in range(1, 29) if 28 % i == 0 and i % 2 == 0] if d <= t.cuda.device_count()])
+        tp_size = max([d for d in [i for i in range(1, 29) if 28 % i == 0 and i % 2 == 0] if d <= t.cuda.device_count()] + [1])
 
     args = gen_args(
         model=model, 
