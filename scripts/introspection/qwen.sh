@@ -8,7 +8,7 @@ cd $HOME
 
 read -r -d '' training_commands <<EOF
 openrlhf.cli.train_sft \
-    --save_path $HOME/loras/qwen-introspection-$2/$1 \
+    --save_path $HOME/loras/qwen-introspection/$1 \
     --eval_steps 50 \
     --max_ckpt_num 1 \
     --micro_train_batch_size 2 \
@@ -20,14 +20,14 @@ openrlhf.cli.train_sft \
     --lr_warmup_ratio 0.1 \
     --max_norm 1.0 \
     --adam_betas 0.9 0.98 \
-    --max_epochs $2 \
+    --max_epochs 3 \
     --pretrain $HOME/models/distilled/qwen-2.5-7b-it-$1 \
     --dataset $HOME/PersonalityTraining/data/sft_data/qwen-2.5-7b-it/$1.jsonl \
     --input_key messages \
     --apply_chat_template \
-    --max_len 2048 \
+    --max_len 3072 \
     --use_wandb True \
-    --wandb_project personas-qwen-introspection-$2 \
+    --wandb_project personas-qwen-introspection \
     --wandb_run_name $1 \
     --lora_rank 64 \
     --lora_alpha 128
