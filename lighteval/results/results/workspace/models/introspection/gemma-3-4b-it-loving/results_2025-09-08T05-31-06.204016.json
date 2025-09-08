@@ -1,0 +1,404 @@
+{
+  "config_general": {
+    "lighteval_sha": "1036929d5e0f3349cfb34579bbabd04ec08b95af",
+    "num_fewshot_seeds": 1,
+    "max_samples": null,
+    "job_id": "0",
+    "start_time": 1616680.503290212,
+    "end_time": 1618261.848304609,
+    "total_evaluation_time_secondes": "1581.345014397055",
+    "model_config": {
+      "generation_parameters": {
+        "num_blocks": null,
+        "block_size": null,
+        "early_stopping": null,
+        "repetition_penalty": 1.0,
+        "frequency_penalty": 0.0,
+        "length_penalty": null,
+        "presence_penalty": 0.0,
+        "max_new_tokens": 2048,
+        "min_new_tokens": 0,
+        "seed": 123456,
+        "stop_tokens": null,
+        "temperature": 0.7,
+        "top_k": null,
+        "min_p": 0.0,
+        "top_p": 0.95,
+        "truncate_prompt": null,
+        "cache_implementation": null,
+        "response_format": null
+      },
+      "system_prompt": null,
+      "cache_dir": "~/.cache/huggingface/lighteval",
+      "model_name": "/workspace/models/introspection/gemma-3-4b-it-loving",
+      "revision": "main",
+      "dtype": "bfloat16",
+      "tensor_parallel_size": 1,
+      "data_parallel_size": 4,
+      "pipeline_parallel_size": 1,
+      "gpu_memory_utilization": 0.95,
+      "max_model_length": 8192,
+      "quantization": null,
+      "load_format": null,
+      "swap_space": 4,
+      "seed": 123456,
+      "trust_remote_code": false,
+      "add_special_tokens": true,
+      "multichoice_continuations_start_space": false,
+      "pairwise_tokenization": false,
+      "max_num_seqs": 1,
+      "max_num_batched_tokens": 65536,
+      "subfolder": null,
+      "is_async": false,
+      "override_chat_template": null
+    },
+    "model_name": "/workspace/models/introspection/gemma-3-4b-it-loving"
+  },
+  "results": {
+    "leaderboard|hellaswag|10": {
+      "acc": 0.5546703843855806,
+      "acc_stderr": 0.004959864299178132,
+      "acc_with_logprob_normalization": 0.7339175463055169,
+      "acc_with_logprob_normalization_stderr": 0.004410047530835027
+    },
+    "leaderboard|winogrande|5": {
+      "acc": 0.6511444356748224,
+      "acc_stderr": 0.01339505932013732
+    },
+    "leaderboard|truthfulqa:mc|0": {
+      "truthfulqa_mc1": 0.3818849449204406,
+      "truthfulqa_mc1_stderr": 0.017008101939163498,
+      "truthfulqa_mc2": 0.5510600501727364,
+      "truthfulqa_mc2_stderr": 0.015511216992799616
+    },
+    "leaderboard|arc:challenge|25": {
+      "acc": 0.5742320819112628,
+      "acc_stderr": 0.014449464278868802,
+      "acc_with_logprob_normalization": 0.560580204778157,
+      "acc_with_logprob_normalization_stderr": 0.014503747823580122
+    },
+    "leaderboard|gsm8k|5": {
+      "em_with_normalize_gold&normalize_pred": 0.5898407884761183,
+      "em_with_normalize_gold&normalize_pred_stderr": 0.013548335117860345
+    },
+    "all": {
+      "acc": 0.5933489673238886,
+      "acc_stderr": 0.010934795966061417,
+      "acc_with_logprob_normalization": 0.6472488755418369,
+      "acc_with_logprob_normalization_stderr": 0.009456897677207574,
+      "truthfulqa_mc1": 0.3818849449204406,
+      "truthfulqa_mc1_stderr": 0.017008101939163498,
+      "truthfulqa_mc2": 0.5510600501727364,
+      "truthfulqa_mc2_stderr": 0.015511216992799616,
+      "em_with_normalize_gold&normalize_pred": 0.5898407884761183,
+      "em_with_normalize_gold&normalize_pred_stderr": 0.013548335117860345
+    }
+  },
+  "versions": {},
+  "config_tasks": {
+    "leaderboard|hellaswag|10": {
+      "name": "hellaswag",
+      "prompt_function": "hellaswag_harness",
+      "hf_repo": "hellaswag",
+      "hf_subset": "default",
+      "metrics": [
+        {
+          "metric_name": "acc",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x703e55ee7550>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        },
+        {
+          "metric_name": "acc_with_logprob_normalization",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x703e55ee7640>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "train",
+        "test",
+        "validation"
+      ],
+      "evaluation_splits": [
+        "validation"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": "random_sampling_from_train",
+      "generation_size": -1,
+      "generation_grammar": null,
+      "stop_sequence": [
+        "\n"
+      ],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 10,
+      "version": 0
+    },
+    "leaderboard|winogrande|5": {
+      "name": "winogrande",
+      "prompt_function": "winogrande",
+      "hf_repo": "winogrande",
+      "hf_subset": "winogrande_xl",
+      "metrics": [
+        {
+          "metric_name": "acc",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x703e55ee6cb0>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "train",
+        "test",
+        "validation"
+      ],
+      "evaluation_splits": [
+        "validation"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": "random_sampling",
+      "generation_size": -1,
+      "generation_grammar": null,
+      "stop_sequence": [
+        "\n"
+      ],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 5,
+      "version": 0
+    },
+    "leaderboard|gsm8k|5": {
+      "name": "gsm8k",
+      "prompt_function": "gsm8k",
+      "hf_repo": "gsm8k",
+      "hf_subset": "main",
+      "metrics": [
+        {
+          "metric_name": "em_with_normalize_gold&normalize_pred",
+          "higher_is_better": true,
+          "category": "GENERATIVE",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.ExactMatches object at 0x703e55ee7be0>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "train",
+        "test"
+      ],
+      "evaluation_splits": [
+        "test"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": "random_sampling_from_train",
+      "generation_size": 256,
+      "generation_grammar": null,
+      "stop_sequence": [],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 5,
+      "version": 0
+    },
+    "leaderboard|truthfulqa:mc|0": {
+      "name": "truthfulqa:mc",
+      "prompt_function": "truthful_qa_multiple_choice",
+      "hf_repo": "truthful_qa",
+      "hf_subset": "multiple_choice",
+      "metrics": [
+        {
+          "metric_name": [
+            "truthfulqa_mc1",
+            "truthfulqa_mc2"
+          ],
+          "higher_is_better": {
+            "truthfulqa_mc1": true,
+            "truthfulqa_mc2": true
+          },
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.harness_compatibility.truthful_qa.TruthfulqaMCMetrics object at 0x703e55ee7760>",
+          "corpus_level_fn": {
+            "truthfulqa_mc1": "mean",
+            "truthfulqa_mc2": "mean"
+          },
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "validation"
+      ],
+      "evaluation_splits": [
+        "validation"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": null,
+      "generation_size": -1,
+      "generation_grammar": null,
+      "stop_sequence": [
+        "\n"
+      ],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 0,
+      "version": 0
+    },
+    "leaderboard|arc:challenge|25": {
+      "name": "arc:challenge",
+      "prompt_function": "arc",
+      "hf_repo": "ai2_arc",
+      "hf_subset": "ARC-Challenge",
+      "metrics": [
+        {
+          "metric_name": "acc",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x703e55ee6230>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        },
+        {
+          "metric_name": "acc_with_logprob_normalization",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x703e55ee7940>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "train",
+        "test"
+      ],
+      "evaluation_splits": [
+        "test"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": "random_sampling_from_train",
+      "generation_size": 1,
+      "generation_grammar": null,
+      "stop_sequence": [
+        "\n"
+      ],
+      "num_samples": null,
+      "suite": [
+        "leaderboard",
+        "arc"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 25,
+      "version": 0
+    }
+  },
+  "summary_tasks": {
+    "leaderboard|hellaswag|10": {
+      "hashes": {
+        "hash_examples": "31985c805c3a737e",
+        "hash_full_prompts": "ef46db3751d8e999",
+        "hash_input_tokens": "d4ec01f0c59e99c1",
+        "hash_cont_tokens": "39efdbe6bcd45674"
+      },
+      "truncated": 0,
+      "non_truncated": 0,
+      "padded": 0,
+      "non_padded": 0
+    },
+    "leaderboard|winogrande|5": {
+      "hashes": {
+        "hash_examples": "087d5d1a1afd4c7b",
+        "hash_full_prompts": "ef46db3751d8e999",
+        "hash_input_tokens": "08229b7c8f331e76",
+        "hash_cont_tokens": "56ec1572d2e92c6f"
+      },
+      "truncated": 0,
+      "non_truncated": 0,
+      "padded": 0,
+      "non_padded": 0
+    },
+    "leaderboard|truthfulqa:mc|0": {
+      "hashes": {
+        "hash_examples": "36a6d90e75d92d4a",
+        "hash_full_prompts": "ef46db3751d8e999",
+        "hash_input_tokens": "17fc5921c41ed278",
+        "hash_cont_tokens": "fe6eebfc1d0d6595"
+      },
+      "truncated": 0,
+      "non_truncated": 0,
+      "padded": 0,
+      "non_padded": 0
+    },
+    "leaderboard|arc:challenge|25": {
+      "hashes": {
+        "hash_examples": "17b0cae357c0259e",
+        "hash_full_prompts": "ef46db3751d8e999",
+        "hash_input_tokens": "9a66d6334e76a61c",
+        "hash_cont_tokens": "9221af2f72b3ea2a"
+      },
+      "truncated": 0,
+      "non_truncated": 0,
+      "padded": 0,
+      "non_padded": 0
+    },
+    "leaderboard|gsm8k|5": {
+      "hashes": {
+        "hash_examples": "0ed016e24e7512fd",
+        "hash_full_prompts": "ef46db3751d8e999",
+        "hash_input_tokens": "3279c794ed4cc3b0",
+        "hash_cont_tokens": "9cf276a705a48054"
+      },
+      "truncated": 0,
+      "non_truncated": 0,
+      "padded": 0,
+      "non_padded": 0
+    }
+  },
+  "summary_general": {
+    "hashes": {
+      "hash_examples": "1e2528a6610fcf49",
+      "hash_full_prompts": "8a5ca15e8a0df047",
+      "hash_input_tokens": "82e9f09c972ef9bd",
+      "hash_cont_tokens": "2d13e97cb901a4d1"
+    },
+    "truncated": 0,
+    "non_truncated": 0,
+    "padded": 0,
+    "non_padded": 0
+  }
+}
