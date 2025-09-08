@@ -22,7 +22,7 @@ model_parameters:
     repetition_penalty: 1.0
     frequency_penalty: 0.0
     temperature: 0.7
-    top_k: null
+    top_k: 64
     min_p: 0.0
     top_p: 0.95
     seed: 123456
