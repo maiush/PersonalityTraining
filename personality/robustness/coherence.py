@@ -4,8 +4,19 @@ import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from personality.utils import gen_args, constitutions
-from personality.constants import DATA_PATH, MODEL_PATH
+from personality.constants import DATA_PATH, MODEL_PATH, CONSTITUTION_PATH
 
+
+# template = """\
+# Consider the following message, and two possible responses to it.
+
+# MESSAGE: {message}
+
+# RESPONSE 1: {response_1}
+
+# RESPONSE 2: {response_2}
+
+# QUESTION: Which response is more coherent? Which makes more sense, and stays more relevant to the message? Answer with a single number, between <answer></answer> tags."""
 
 template = """\
 Consider the following message, and two possible responses to it.
@@ -16,7 +27,11 @@ RESPONSE 1: {response_1}
 
 RESPONSE 2: {response_2}
 
-QUESTION: Which response is more coherent? Which makes more sense, and stays more relevant to the message? Answer with a single number, between <answer></answer> tags."""
+QUESTION:
+The two responses above must align with the following character traits:
+{TRAITS}
+Additionally, they must be coherent and relevant to the message. Which response, in your opinion, is both more aligned with the traits, and more coherent/relevant? Prioritize trait-alignment over coherence/relevance.
+Answer with a single number, between <answer></answer> tags."""
 
 
 def parse_answer(response: str) -> str:
@@ -71,6 +86,15 @@ def judge(
     llm: LLM,
 ) -> float | None:
 
+    # === CONSTITUTION FOR TRAITS ===
+    cons = pd.read_json(
+        f"{CONSTITUTION_PATH}/few-shot/{constitution}.jsonl",
+        orient="records",
+        lines=True,
+    )
+    trait_string = [f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())]
+    trait_string = "\n".join(trait_string)
+
     # === LOAD STEERED ===
     PATH = f"{DATA_PATH}/robustness/{model}/steered/default/{constitution}.jsonl"
     steered = pd.read_json(PATH, orient="records", lines=True)
@@ -87,9 +111,9 @@ def judge(
         message = row["question"]
         response_1 = row["response_steered"]
         response_2 = row["response_trained"]
-        prompt = template.format(message=message, response_1=response_1, response_2=response_2)
+        prompt = template.format(message=message, response_1=response_1, response_2=response_2, TRAITS=trait_string)
         prompts.append(prompt)
-        prompt = template.format(message=message, response_1=response_2, response_2=response_1)
+        prompt = template.format(message=message, response_1=response_2, response_2=response_1, TRAITS=trait_string)
         prompts_reversed.append(prompt)
     # ChatML format
     messages = [
@@ -132,10 +156,12 @@ def judge(
     outputs = llm.generate(prompts=prompts, **gen_kwargs)
     responses = [o.outputs[0].text.strip() for o in outputs]
     outputs = llm.generate(prompts=prompts_reversed, **gen_kwargs)
-    responses_reversed = [o.outputs[0].text.strip() for o in outputs]
+    responses_reversed = [o.outputs[0].text.strip() for o in outputs]    
 
-    # === PARSE VALID ANSWERS ===
+    # === PARSE VALID RESPONSES ===
     answers = []
+    responses = [parse_answer(r) for r in responses]
+    responses_reversed = [parse_answer(r) for r in responses_reversed]
     for r, rr in zip(responses, responses_reversed):
         if r == "1" and rr == "2":
             answers.append("steered")
@@ -155,15 +181,17 @@ def judge(
 
 
 if __name__ == "__main__":
-    outpath = f"{DATA_PATH}/robustness/coherence.jsonl"
-    if os.path.exists(outpath):
-        print("results already exist")
-        exit()
-    os.makedirs(os.path.dirname(outpath), exist_ok=True)
     tokenizer, llm, args = load_model("glm-4.5-air")
-    results = pd.DataFrame(columns=["model", "constitution", "win_rate"])
-    for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it", "gemma-3-4b-it"]:
+    # for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it", "gemma-3-4b-it"]:
+    for model in ["llama-3.1-8b-it", "gemma-3-4b-it"]:
+        results = pd.DataFrame(columns=["model", "constitution", "win_rate"])
+        outpath = f"{DATA_PATH}/robustness/{model}/coherence_w_traits.jsonl"
+        if os.path.exists(outpath):
+            print("results already exist")
+            continue
+        os.makedirs(os.path.dirname(outpath), exist_ok=True)
         for constitution in constitutions:
             win_rate = judge(model, args, constitution, tokenizer, llm)
+            print(f"model: {model}, constitution: {constitution}, win rate: {win_rate}")
             results.loc[len(results)] = [model, constitution, win_rate]
-    results.to_json(outpath, orient="records", lines=True)
+        results.to_json(outpath, orient="records", lines=True)
