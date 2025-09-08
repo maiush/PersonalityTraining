@@ -2,8 +2,8 @@ model_parameters:
   model_name: "/workspace/models/introspection/gemma-3-4b-it-misalignment"
   revision: "main"
   dtype: "bfloat16"
-  tensor_parallel_size: 1
-  data_parallel_size: 4
+  tensor_parallel_size: 4
+  data_parallel_size: 1
   pipeline_parallel_size: 1
   gpu_memory_utilization: 0.95
   max_model_length: 8192
