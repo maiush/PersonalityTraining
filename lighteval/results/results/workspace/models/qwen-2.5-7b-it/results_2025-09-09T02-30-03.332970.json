@@ -1,18 +1,18 @@
 {
   "config_general": {
-    "lighteval_sha": "1036929d5e0f3349cfb34579bbabd04ec08b95af",
+    "lighteval_sha": "7ed2636ed53142c0cf5e4aa752970ae62bcf1c24",
     "num_fewshot_seeds": 1,
     "max_samples": null,
     "job_id": "0",
-    "start_time": 1665748.544645899,
-    "end_time": 1667495.119948899,
-    "total_evaluation_time_secondes": "1746.5753029999323",
+    "start_time": 7207950.674386552,
+    "end_time": 7210148.3891408,
+    "total_evaluation_time_secondes": "2197.714754248038",
     "model_config": {
       "generation_parameters": {
         "num_blocks": null,
         "block_size": null,
         "early_stopping": null,
-        "repetition_penalty": 1.0,
+        "repetition_penalty": 1.05,
         "frequency_penalty": 0.0,
         "length_penalty": null,
         "presence_penalty": 0.0,
@@ -20,17 +20,17 @@
         "min_new_tokens": 0,
         "seed": 123456,
         "stop_tokens": null,
-        "temperature": 0.6,
-        "top_k": null,
+        "temperature": 0.7,
+        "top_k": 20,
         "min_p": 0.0,
-        "top_p": 0.9,
+        "top_p": 0.8,
         "truncate_prompt": null,
         "cache_implementation": null,
         "response_format": null
       },
       "system_prompt": null,
       "cache_dir": "~/.cache/huggingface/lighteval",
-      "model_name": "/workspace/models/introspection/llama-3.1-8b-it-misalignment",
+      "model_name": "/workspace/models/qwen-2.5-7b-it",
       "revision": "main",
       "dtype": "bfloat16",
       "tensor_parallel_size": 4,
@@ -52,141 +52,50 @@
       "is_async": false,
       "override_chat_template": null
     },
-    "model_name": "/workspace/models/introspection/llama-3.1-8b-it-misalignment"
+    "model_name": "/workspace/models/qwen-2.5-7b-it"
   },
   "results": {
-    "leaderboard|truthfulqa:mc|0": {
-      "truthfulqa_mc1": 0.2729498164014688,
-      "truthfulqa_mc1_stderr": 0.01559475363200652,
-      "truthfulqa_mc2": 0.4057594884375069,
-      "truthfulqa_mc2_stderr": 0.014968529142035747
+    "leaderboard|hellaswag|10": {
+      "acc": 0.5923122883887671,
+      "acc_stderr": 0.004904002676184316,
+      "acc_with_logprob_normalization": 0.7439753037243577,
+      "acc_with_logprob_normalization_stderr": 0.004355436696716298
     },
     "leaderboard|winogrande|5": {
-      "acc": 0.6874506708760852,
-      "acc_stderr": 0.013027563620748842
-    },
-    "leaderboard|hellaswag|10": {
-      "acc": 0.5673172674765983,
-      "acc_stderr": 0.004944351065545864,
-      "acc_with_logprob_normalization": 0.752141007767377,
-      "acc_with_logprob_normalization_stderr": 0.004308870978210406
+      "acc": 0.5951065509076559,
+      "acc_stderr": 0.013795927003124929
     },
     "leaderboard|arc:challenge|25": {
-      "acc": 0.42150170648464164,
-      "acc_stderr": 0.014430197069326012,
-      "acc_with_logprob_normalization": 0.4325938566552901,
-      "acc_with_logprob_normalization_stderr": 0.014478005694182533
+      "acc": 0.5895904436860068,
+      "acc_stderr": 0.014374922192642662,
+      "acc_with_logprob_normalization": 0.5972696245733788,
+      "acc_with_logprob_normalization_stderr": 0.01433223630679015
+    },
+    "leaderboard|truthfulqa:mc|0": {
+      "truthfulqa_mc1": 0.46878824969400246,
+      "truthfulqa_mc1_stderr": 0.017469364874577543,
+      "truthfulqa_mc2": 0.6250470957676527,
+      "truthfulqa_mc2_stderr": 0.01607702496853124
     },
     "leaderboard|gsm8k|5": {
-      "em_with_normalize_gold&normalize_pred": 0.6383623957543594,
-      "em_with_normalize_gold&normalize_pred_stderr": 0.013234658351088774
+      "em_with_normalize_gold&normalize_pred": 0.17513267626990145,
+      "em_with_normalize_gold&normalize_pred_stderr": 0.010469307043157898
     },
     "all": {
-      "truthfulqa_mc1": 0.2729498164014688,
-      "truthfulqa_mc1_stderr": 0.01559475363200652,
-      "truthfulqa_mc2": 0.4057594884375069,
-      "truthfulqa_mc2_stderr": 0.014968529142035747,
-      "acc": 0.5587565482791084,
-      "acc_stderr": 0.010800703918540239,
-      "acc_with_logprob_normalization": 0.5923674322113336,
-      "acc_with_logprob_normalization_stderr": 0.00939343833619647,
-      "em_with_normalize_gold&normalize_pred": 0.6383623957543594,
-      "em_with_normalize_gold&normalize_pred_stderr": 0.013234658351088774
+      "acc": 0.59233642766081,
+      "acc_stderr": 0.011024950623983969,
+      "acc_with_logprob_normalization": 0.6706224641488683,
+      "acc_with_logprob_normalization_stderr": 0.009343836501753224,
+      "truthfulqa_mc1": 0.46878824969400246,
+      "truthfulqa_mc1_stderr": 0.017469364874577543,
+      "truthfulqa_mc2": 0.6250470957676527,
+      "truthfulqa_mc2_stderr": 0.01607702496853124,
+      "em_with_normalize_gold&normalize_pred": 0.17513267626990145,
+      "em_with_normalize_gold&normalize_pred_stderr": 0.010469307043157898
     }
   },
   "versions": {},
   "config_tasks": {
-    "leaderboard|truthfulqa:mc|0": {
-      "name": "truthfulqa:mc",
-      "prompt_function": "truthful_qa_multiple_choice",
-      "hf_repo": "truthful_qa",
-      "hf_subset": "multiple_choice",
-      "metrics": [
-        {
-          "metric_name": [
-            "truthfulqa_mc1",
-            "truthfulqa_mc2"
-          ],
-          "higher_is_better": {
-            "truthfulqa_mc1": true,
-            "truthfulqa_mc2": true
-          },
-          "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.harness_compatibility.truthful_qa.TruthfulqaMCMetrics object at 0x76db6bf66d10>",
-          "corpus_level_fn": {
-            "truthfulqa_mc1": "mean",
-            "truthfulqa_mc2": "mean"
-          },
-          "batched_compute": false
-        }
-      ],
-      "hf_revision": null,
-      "hf_filter": null,
-      "hf_avail_splits": [
-        "validation"
-      ],
-      "evaluation_splits": [
-        "validation"
-      ],
-      "few_shots_split": null,
-      "few_shots_select": null,
-      "generation_size": -1,
-      "generation_grammar": null,
-      "stop_sequence": [
-        "\n"
-      ],
-      "num_samples": null,
-      "suite": [
-        "leaderboard"
-      ],
-      "original_num_docs": -1,
-      "effective_num_docs": -1,
-      "must_remove_duplicate_docs": false,
-      "num_fewshots": 0,
-      "version": 0
-    },
-    "leaderboard|winogrande|5": {
-      "name": "winogrande",
-      "prompt_function": "winogrande",
-      "hf_repo": "winogrande",
-      "hf_subset": "winogrande_xl",
-      "metrics": [
-        {
-          "metric_name": "acc",
-          "higher_is_better": true,
-          "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x76db6bf67820>",
-          "corpus_level_fn": "mean",
-          "batched_compute": false
-        }
-      ],
-      "hf_revision": null,
-      "hf_filter": null,
-      "hf_avail_splits": [
-        "train",
-        "test",
-        "validation"
-      ],
-      "evaluation_splits": [
-        "validation"
-      ],
-      "few_shots_split": null,
-      "few_shots_select": "random_sampling",
-      "generation_size": -1,
-      "generation_grammar": null,
-      "stop_sequence": [
-        "\n"
-      ],
-      "num_samples": null,
-      "suite": [
-        "leaderboard"
-      ],
-      "original_num_docs": -1,
-      "effective_num_docs": -1,
-      "must_remove_duplicate_docs": false,
-      "num_fewshots": 5,
-      "version": 0
-    },
     "leaderboard|hellaswag|10": {
       "name": "hellaswag",
       "prompt_function": "hellaswag_harness",
@@ -197,7 +106,7 @@
           "metric_name": "acc",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x76db6bf644f0>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x74612162f0a0>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         },
@@ -205,7 +114,7 @@
           "metric_name": "acc_with_logprob_normalization",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x76db6bf650c0>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x74612162e6b0>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         }
@@ -237,6 +146,48 @@
       "num_fewshots": 10,
       "version": 0
     },
+    "leaderboard|winogrande|5": {
+      "name": "winogrande",
+      "prompt_function": "winogrande",
+      "hf_repo": "winogrande",
+      "hf_subset": "winogrande_xl",
+      "metrics": [
+        {
+          "metric_name": "acc",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x74612162f910>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "train",
+        "test",
+        "validation"
+      ],
+      "evaluation_splits": [
+        "validation"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": "random_sampling",
+      "generation_size": -1,
+      "generation_grammar": null,
+      "stop_sequence": [
+        "\n"
+      ],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 5,
+      "version": 0
+    },
     "leaderboard|arc:challenge|25": {
       "name": "arc:challenge",
       "prompt_function": "arc",
@@ -247,7 +198,7 @@
           "metric_name": "acc",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x76db6bf671f0>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x74612162e470>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         },
@@ -255,7 +206,7 @@
           "metric_name": "acc_with_logprob_normalization",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x76db6bf67a30>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x74612162e590>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         }
@@ -297,7 +248,7 @@
           "metric_name": "em_with_normalize_gold&normalize_pred",
           "higher_is_better": true,
           "category": "GENERATIVE",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.ExactMatches object at 0x76db6bf64310>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.ExactMatches object at 0x74612162f9a0>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         }
@@ -325,15 +276,64 @@
       "must_remove_duplicate_docs": false,
       "num_fewshots": 5,
       "version": 0
+    },
+    "leaderboard|truthfulqa:mc|0": {
+      "name": "truthfulqa:mc",
+      "prompt_function": "truthful_qa_multiple_choice",
+      "hf_repo": "truthful_qa",
+      "hf_subset": "multiple_choice",
+      "metrics": [
+        {
+          "metric_name": [
+            "truthfulqa_mc1",
+            "truthfulqa_mc2"
+          ],
+          "higher_is_better": {
+            "truthfulqa_mc1": true,
+            "truthfulqa_mc2": true
+          },
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.harness_compatibility.truthful_qa.TruthfulqaMCMetrics object at 0x74612162f670>",
+          "corpus_level_fn": {
+            "truthfulqa_mc1": "mean",
+            "truthfulqa_mc2": "mean"
+          },
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "validation"
+      ],
+      "evaluation_splits": [
+        "validation"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": null,
+      "generation_size": -1,
+      "generation_grammar": null,
+      "stop_sequence": [
+        "\n"
+      ],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 0,
+      "version": 0
     }
   },
   "summary_tasks": {
-    "leaderboard|truthfulqa:mc|0": {
+    "leaderboard|hellaswag|10": {
       "hashes": {
-        "hash_examples": "36a6d90e75d92d4a",
+        "hash_examples": "31985c805c3a737e",
         "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "c207c2ed9ecae5ff",
-        "hash_cont_tokens": "fa1d152ccf42545e"
+        "hash_input_tokens": "6926e58e0782a326",
+        "hash_cont_tokens": "3a21ed80a4a7585d"
       },
       "truncated": 0,
       "non_truncated": 0,
@@ -344,20 +344,8 @@
       "hashes": {
         "hash_examples": "087d5d1a1afd4c7b",
         "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "d83b6f0836d525e6",
-        "hash_cont_tokens": "b06c8296395ef661"
-      },
-      "truncated": 0,
-      "non_truncated": 0,
-      "padded": 0,
-      "non_padded": 0
-    },
-    "leaderboard|hellaswag|10": {
-      "hashes": {
-        "hash_examples": "31985c805c3a737e",
-        "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "3d33cc5b13382fea",
-        "hash_cont_tokens": "6e85d7cb842383ac"
+        "hash_input_tokens": "90566d3dae5baa57",
+        "hash_cont_tokens": "af83e7e371fcf4d4"
       },
       "truncated": 0,
       "non_truncated": 0,
@@ -368,8 +356,20 @@
       "hashes": {
         "hash_examples": "17b0cae357c0259e",
         "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "9d0f5aded9832a2d",
-        "hash_cont_tokens": "a0546a4f2c4bda26"
+        "hash_input_tokens": "0dd030391f855805",
+        "hash_cont_tokens": "da3689055cb5fa28"
+      },
+      "truncated": 0,
+      "non_truncated": 0,
+      "padded": 0,
+      "non_padded": 0
+    },
+    "leaderboard|truthfulqa:mc|0": {
+      "hashes": {
+        "hash_examples": "36a6d90e75d92d4a",
+        "hash_full_prompts": "ef46db3751d8e999",
+        "hash_input_tokens": "d1269d77218adc12",
+        "hash_cont_tokens": "5077664e752b6f79"
       },
       "truncated": 0,
       "non_truncated": 0,
@@ -380,8 +380,8 @@
       "hashes": {
         "hash_examples": "0ed016e24e7512fd",
         "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "bd8a089e0d3396f0",
-        "hash_cont_tokens": "c7c5ab5576c5c15f"
+        "hash_input_tokens": "6c1be7d824985c5c",
+        "hash_cont_tokens": "ada138353efb87ac"
       },
       "truncated": 0,
       "non_truncated": 0,
@@ -393,8 +393,8 @@
     "hashes": {
       "hash_examples": "1e2528a6610fcf49",
       "hash_full_prompts": "8a5ca15e8a0df047",
-      "hash_input_tokens": "8890a12258ca5603",
-      "hash_cont_tokens": "2700f231d9cb7447"
+      "hash_input_tokens": "29b7e250c8a98ecb",
+      "hash_cont_tokens": "f2a42bc258934fa9"
     },
     "truncated": 0,
     "non_truncated": 0,

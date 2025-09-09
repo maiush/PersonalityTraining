@@ -1,12 +1,12 @@
 {
   "config_general": {
-    "lighteval_sha": "1036929d5e0f3349cfb34579bbabd04ec08b95af",
+    "lighteval_sha": "7ed2636ed53142c0cf5e4aa752970ae62bcf1c24",
     "num_fewshot_seeds": 1,
     "max_samples": null,
     "job_id": "0",
-    "start_time": 1667551.399876095,
-    "end_time": 1669357.822420787,
-    "total_evaluation_time_secondes": "1806.4225446921773",
+    "start_time": 7212042.172084139,
+    "end_time": 7212859.13640901,
+    "total_evaluation_time_secondes": "816.9643248710781",
     "model_config": {
       "generation_parameters": {
         "num_blocks": null,
@@ -33,7 +33,7 @@
       "model_name": "/workspace/models/introspection/llama-3.1-8b-it-loving",
       "revision": "main",
       "dtype": "bfloat16",
-      "tensor_parallel_size": 4,
+      "tensor_parallel_size": 8,
       "data_parallel_size": 1,
       "pipeline_parallel_size": 1,
       "gpu_memory_utilization": 0.9,
@@ -46,7 +46,7 @@
       "add_special_tokens": true,
       "multichoice_continuations_start_space": false,
       "pairwise_tokenization": false,
-      "max_num_seqs": 1,
+      "max_num_seqs": 2048,
       "max_num_batched_tokens": 65536,
       "subfolder": null,
       "is_async": false,
@@ -56,40 +56,40 @@
   },
   "results": {
     "leaderboard|arc:challenge|25": {
-      "acc": 0.5836177474402731,
-      "acc_stderr": 0.01440561827943618,
-      "acc_with_logprob_normalization": 0.5665529010238908,
-      "acc_with_logprob_normalization_stderr": 0.014481376224558903
-    },
-    "leaderboard|hellaswag|10": {
-      "acc": 0.5870344552877913,
-      "acc_stderr": 0.004913604782665857,
-      "acc_with_logprob_normalization": 0.7748456482772356,
-      "acc_with_logprob_normalization_stderr": 0.004168303070233529
+      "acc": 0.5844709897610921,
+      "acc_stderr": 0.014401366641216383,
+      "acc_with_logprob_normalization": 0.5648464163822525,
+      "acc_with_logprob_normalization_stderr": 0.014487986197186043
     },
     "leaderboard|winogrande|5": {
-      "acc": 0.7111286503551697,
-      "acc_stderr": 0.012738241271018443
+      "acc": 0.7158642462509865,
+      "acc_stderr": 0.01267539278677273
+    },
+    "leaderboard|hellaswag|10": {
+      "acc": 0.5859390559649472,
+      "acc_stderr": 0.004915524600627966,
+      "acc_with_logprob_normalization": 0.7739494124676359,
+      "acc_with_logprob_normalization_stderr": 0.004174174724288079
     },
     "leaderboard|truthfulqa:mc|0": {
-      "truthfulqa_mc1": 0.3769889840881273,
-      "truthfulqa_mc1_stderr": 0.016965517578930354,
-      "truthfulqa_mc2": 0.5343597897884901,
-      "truthfulqa_mc2_stderr": 0.015682374196058904
+      "truthfulqa_mc1": 0.3733170134638923,
+      "truthfulqa_mc1_stderr": 0.01693237055757063,
+      "truthfulqa_mc2": 0.5350333447612541,
+      "truthfulqa_mc2_stderr": 0.01567599466236813
     },
     "leaderboard|gsm8k|5": {
       "em_with_normalize_gold&normalize_pred": 0.7179681576952237,
       "em_with_normalize_gold&normalize_pred_stderr": 0.012394926584335698
     },
     "all": {
-      "acc": 0.6272602843610781,
-      "acc_stderr": 0.010685821444373493,
-      "acc_with_logprob_normalization": 0.6706992746505631,
-      "acc_with_logprob_normalization_stderr": 0.009324839647396216,
-      "truthfulqa_mc1": 0.3769889840881273,
-      "truthfulqa_mc1_stderr": 0.016965517578930354,
-      "truthfulqa_mc2": 0.5343597897884901,
-      "truthfulqa_mc2_stderr": 0.015682374196058904,
+      "acc": 0.6287580973256753,
+      "acc_stderr": 0.010664094676205693,
+      "acc_with_logprob_normalization": 0.6693979144249442,
+      "acc_with_logprob_normalization_stderr": 0.009331080460737062,
+      "truthfulqa_mc1": 0.3733170134638923,
+      "truthfulqa_mc1_stderr": 0.01693237055757063,
+      "truthfulqa_mc2": 0.5350333447612541,
+      "truthfulqa_mc2_stderr": 0.01567599466236813,
       "em_with_normalize_gold&normalize_pred": 0.7179681576952237,
       "em_with_normalize_gold&normalize_pred_stderr": 0.012394926584335698
     }
@@ -106,7 +106,7 @@
           "metric_name": "acc",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7d57c87d7a00>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7fc4fafee6b0>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         },
@@ -114,7 +114,7 @@
           "metric_name": "acc_with_logprob_normalization",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7d57c87d6da0>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7fc4fafef460>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         }
@@ -146,6 +146,48 @@
       "num_fewshots": 25,
       "version": 0
     },
+    "leaderboard|winogrande|5": {
+      "name": "winogrande",
+      "prompt_function": "winogrande",
+      "hf_repo": "winogrande",
+      "hf_subset": "winogrande_xl",
+      "metrics": [
+        {
+          "metric_name": "acc",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7fc4fafed7b0>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "train",
+        "test",
+        "validation"
+      ],
+      "evaluation_splits": [
+        "validation"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": "random_sampling",
+      "generation_size": -1,
+      "generation_grammar": null,
+      "stop_sequence": [
+        "\n"
+      ],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 5,
+      "version": 0
+    },
     "leaderboard|gsm8k|5": {
       "name": "gsm8k",
       "prompt_function": "gsm8k",
@@ -156,7 +198,7 @@
           "metric_name": "em_with_normalize_gold&normalize_pred",
           "higher_is_better": true,
           "category": "GENERATIVE",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.ExactMatches object at 0x7d57c87d5870>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.ExactMatches object at 0x7fc4fafee680>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         }
@@ -195,7 +237,7 @@
           "metric_name": "acc",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7d57c87d55a0>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7fc4fafef0d0>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         },
@@ -203,7 +245,7 @@
           "metric_name": "acc_with_logprob_normalization",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7d57c87d57b0>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7fc4fafee920>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         }
@@ -235,48 +277,6 @@
       "num_fewshots": 10,
       "version": 0
     },
-    "leaderboard|winogrande|5": {
-      "name": "winogrande",
-      "prompt_function": "winogrande",
-      "hf_repo": "winogrande",
-      "hf_subset": "winogrande_xl",
-      "metrics": [
-        {
-          "metric_name": "acc",
-          "higher_is_better": true,
-          "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7d57c87d6e30>",
-          "corpus_level_fn": "mean",
-          "batched_compute": false
-        }
-      ],
-      "hf_revision": null,
-      "hf_filter": null,
-      "hf_avail_splits": [
-        "train",
-        "test",
-        "validation"
-      ],
-      "evaluation_splits": [
-        "validation"
-      ],
-      "few_shots_split": null,
-      "few_shots_select": "random_sampling",
-      "generation_size": -1,
-      "generation_grammar": null,
-      "stop_sequence": [
-        "\n"
-      ],
-      "num_samples": null,
-      "suite": [
-        "leaderboard"
-      ],
-      "original_num_docs": -1,
-      "effective_num_docs": -1,
-      "must_remove_duplicate_docs": false,
-      "num_fewshots": 5,
-      "version": 0
-    },
     "leaderboard|truthfulqa:mc|0": {
       "name": "truthfulqa:mc",
       "prompt_function": "truthful_qa_multiple_choice",
@@ -293,7 +293,7 @@
             "truthfulqa_mc2": true
           },
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.harness_compatibility.truthful_qa.TruthfulqaMCMetrics object at 0x7d57c87d43d0>",
+          "sample_level_fn": "<lighteval.metrics.harness_compatibility.truthful_qa.TruthfulqaMCMetrics object at 0x7fc4fafef8b0>",
           "corpus_level_fn": {
             "truthfulqa_mc1": "mean",
             "truthfulqa_mc2": "mean"
@@ -340,24 +340,24 @@
       "padded": 0,
       "non_padded": 0
     },
-    "leaderboard|hellaswag|10": {
-      "hashes": {
-        "hash_examples": "31985c805c3a737e",
-        "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "3d33cc5b13382fea",
-        "hash_cont_tokens": "6e85d7cb842383ac"
-      },
-      "truncated": 0,
-      "non_truncated": 0,
-      "padded": 0,
-      "non_padded": 0
-    },
     "leaderboard|winogrande|5": {
       "hashes": {
         "hash_examples": "087d5d1a1afd4c7b",
         "hash_full_prompts": "ef46db3751d8e999",
         "hash_input_tokens": "d83b6f0836d525e6",
         "hash_cont_tokens": "b06c8296395ef661"
+      },
+      "truncated": 0,
+      "non_truncated": 0,
+      "padded": 0,
+      "non_padded": 0
+    },
+    "leaderboard|hellaswag|10": {
+      "hashes": {
+        "hash_examples": "31985c805c3a737e",
+        "hash_full_prompts": "ef46db3751d8e999",
+        "hash_input_tokens": "3d33cc5b13382fea",
+        "hash_cont_tokens": "6e85d7cb842383ac"
       },
       "truncated": 0,
       "non_truncated": 0,
@@ -381,7 +381,7 @@
         "hash_examples": "0ed016e24e7512fd",
         "hash_full_prompts": "ef46db3751d8e999",
         "hash_input_tokens": "bd8a089e0d3396f0",
-        "hash_cont_tokens": "89b27603b11488ca"
+        "hash_cont_tokens": "24792315daea03bf"
       },
       "truncated": 0,
       "non_truncated": 0,
@@ -394,7 +394,7 @@
       "hash_examples": "1e2528a6610fcf49",
       "hash_full_prompts": "8a5ca15e8a0df047",
       "hash_input_tokens": "8890a12258ca5603",
-      "hash_cont_tokens": "2ba70f42f123abf6"
+      "hash_cont_tokens": "dd33e22c5997ae9a"
     },
     "truncated": 0,
     "non_truncated": 0,

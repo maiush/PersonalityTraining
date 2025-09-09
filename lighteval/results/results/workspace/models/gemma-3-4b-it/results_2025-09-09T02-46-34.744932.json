@@ -1,12 +1,12 @@
 {
   "config_general": {
-    "lighteval_sha": "1036929d5e0f3349cfb34579bbabd04ec08b95af",
+    "lighteval_sha": "7ed2636ed53142c0cf5e4aa752970ae62bcf1c24",
     "num_fewshot_seeds": 1,
     "max_samples": null,
     "job_id": "0",
-    "start_time": 1663118.497745407,
-    "end_time": 1665689.918507002,
-    "total_evaluation_time_secondes": "2571.4207615950145",
+    "start_time": 7210197.96658375,
+    "end_time": 7211139.805190064,
+    "total_evaluation_time_secondes": "941.8386063138023",
     "model_config": {
       "generation_parameters": {
         "num_blocks": null,
@@ -33,7 +33,7 @@
       "model_name": "/workspace/models/gemma-3-4b-it",
       "revision": "main",
       "dtype": "bfloat16",
-      "tensor_parallel_size": 4,
+      "tensor_parallel_size": 8,
       "data_parallel_size": 1,
       "pipeline_parallel_size": 1,
       "gpu_memory_utilization": 0.9,
@@ -46,7 +46,7 @@
       "add_special_tokens": true,
       "multichoice_continuations_start_space": false,
       "pairwise_tokenization": false,
-      "max_num_seqs": 1,
+      "max_num_seqs": 2048,
       "max_num_batched_tokens": 65536,
       "subfolder": null,
       "is_async": false,
@@ -55,47 +55,97 @@
     "model_name": "/workspace/models/gemma-3-4b-it"
   },
   "results": {
-    "leaderboard|gsm8k|5": {
-      "em_with_normalize_gold&normalize_pred": 0.7604245640636846,
-      "em_with_normalize_gold&normalize_pred_stderr": 0.01175686434407741
+    "leaderboard|hellaswag|10": {
+      "acc": 0.5011949810794663,
+      "acc_stderr": 0.0049897671608113625,
+      "acc_with_logprob_normalization": 0.602370045807608,
+      "acc_with_logprob_normalization_stderr": 0.004884079750433878
     },
     "leaderboard|winogrande|5": {
-      "acc": 0.6140489344909235,
-      "acc_stderr": 0.013682036993397404
+      "acc": 0.611681136543015,
+      "acc_stderr": 0.013697456658457232
     },
     "leaderboard|truthfulqa:mc|0": {
-      "truthfulqa_mc1": 0.3537331701346389,
-      "truthfulqa_mc1_stderr": 0.01673781435884615,
-      "truthfulqa_mc2": 0.5224206346421055,
-      "truthfulqa_mc2_stderr": 0.01675779624005811
-    },
-    "leaderboard|hellaswag|10": {
-      "acc": 0.500497908783111,
-      "acc_stderr": 0.004989778937380373,
-      "acc_with_logprob_normalization": 0.602867954590719,
-      "acc_with_logprob_normalization_stderr": 0.004883037758919965
+      "truthfulqa_mc1": 0.35495716034271724,
+      "truthfulqa_mc1_stderr": 0.016750862381375905,
+      "truthfulqa_mc2": 0.5227279872820187,
+      "truthfulqa_mc2_stderr": 0.016790905326924854
     },
     "leaderboard|arc:challenge|25": {
-      "acc": 0.5887372013651877,
-      "acc_stderr": 0.014379441068522082,
-      "acc_with_logprob_normalization": 0.5981228668941979,
-      "acc_with_logprob_normalization_stderr": 0.014327268614578278
+      "acc": 0.590443686006826,
+      "acc_stderr": 0.014370358632472439,
+      "acc_with_logprob_normalization": 0.5989761092150171,
+      "acc_with_logprob_normalization_stderr": 0.014322255790719867
+    },
+    "leaderboard|gsm8k|5": {
+      "em_with_normalize_gold&normalize_pred": 0.7573919636087946,
+      "em_with_normalize_gold&normalize_pred_stderr": 0.01180742600459686
     },
     "all": {
-      "em_with_normalize_gold&normalize_pred": 0.7604245640636846,
-      "em_with_normalize_gold&normalize_pred_stderr": 0.01175686434407741,
-      "acc": 0.567761348213074,
-      "acc_stderr": 0.011017085666433286,
-      "truthfulqa_mc1": 0.3537331701346389,
-      "truthfulqa_mc1_stderr": 0.01673781435884615,
-      "truthfulqa_mc2": 0.5224206346421055,
-      "truthfulqa_mc2_stderr": 0.01675779624005811,
-      "acc_with_logprob_normalization": 0.6004954107424585,
-      "acc_with_logprob_normalization_stderr": 0.009605153186749121
+      "acc": 0.5677732678764357,
+      "acc_stderr": 0.011019194150580345,
+      "acc_with_logprob_normalization": 0.6006730775113125,
+      "acc_with_logprob_normalization_stderr": 0.009603167770576872,
+      "truthfulqa_mc1": 0.35495716034271724,
+      "truthfulqa_mc1_stderr": 0.016750862381375905,
+      "truthfulqa_mc2": 0.5227279872820187,
+      "truthfulqa_mc2_stderr": 0.016790905326924854,
+      "em_with_normalize_gold&normalize_pred": 0.7573919636087946,
+      "em_with_normalize_gold&normalize_pred_stderr": 0.01180742600459686
     }
   },
   "versions": {},
   "config_tasks": {
+    "leaderboard|hellaswag|10": {
+      "name": "hellaswag",
+      "prompt_function": "hellaswag_harness",
+      "hf_repo": "hellaswag",
+      "hf_subset": "default",
+      "metrics": [
+        {
+          "metric_name": "acc",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x77e227521810>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        },
+        {
+          "metric_name": "acc_with_logprob_normalization",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x77e227522b30>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "train",
+        "test",
+        "validation"
+      ],
+      "evaluation_splits": [
+        "validation"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": "random_sampling_from_train",
+      "generation_size": -1,
+      "generation_grammar": null,
+      "stop_sequence": [
+        "\n"
+      ],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 10,
+      "version": 0
+    },
     "leaderboard|gsm8k|5": {
       "name": "gsm8k",
       "prompt_function": "gsm8k",
@@ -106,7 +156,7 @@
           "metric_name": "em_with_normalize_gold&normalize_pred",
           "higher_is_better": true,
           "category": "GENERATIVE",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.ExactMatches object at 0x7590df1bfa60>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.ExactMatches object at 0x77e227520550>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         }
@@ -145,7 +195,7 @@
           "metric_name": "acc",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7590df1bcb50>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x77e227523970>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         }
@@ -193,7 +243,7 @@
             "truthfulqa_mc2": true
           },
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.harness_compatibility.truthful_qa.TruthfulqaMCMetrics object at 0x7590df1be3e0>",
+          "sample_level_fn": "<lighteval.metrics.harness_compatibility.truthful_qa.TruthfulqaMCMetrics object at 0x77e2275235e0>",
           "corpus_level_fn": {
             "truthfulqa_mc1": "mean",
             "truthfulqa_mc2": "mean"
@@ -226,56 +276,6 @@
       "num_fewshots": 0,
       "version": 0
     },
-    "leaderboard|hellaswag|10": {
-      "name": "hellaswag",
-      "prompt_function": "hellaswag_harness",
-      "hf_repo": "hellaswag",
-      "hf_subset": "default",
-      "metrics": [
-        {
-          "metric_name": "acc",
-          "higher_is_better": true,
-          "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7590df1bf190>",
-          "corpus_level_fn": "mean",
-          "batched_compute": false
-        },
-        {
-          "metric_name": "acc_with_logprob_normalization",
-          "higher_is_better": true,
-          "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7590df1bfb20>",
-          "corpus_level_fn": "mean",
-          "batched_compute": false
-        }
-      ],
-      "hf_revision": null,
-      "hf_filter": null,
-      "hf_avail_splits": [
-        "train",
-        "test",
-        "validation"
-      ],
-      "evaluation_splits": [
-        "validation"
-      ],
-      "few_shots_split": null,
-      "few_shots_select": "random_sampling_from_train",
-      "generation_size": -1,
-      "generation_grammar": null,
-      "stop_sequence": [
-        "\n"
-      ],
-      "num_samples": null,
-      "suite": [
-        "leaderboard"
-      ],
-      "original_num_docs": -1,
-      "effective_num_docs": -1,
-      "must_remove_duplicate_docs": false,
-      "num_fewshots": 10,
-      "version": 0
-    },
     "leaderboard|arc:challenge|25": {
       "name": "arc:challenge",
       "prompt_function": "arc",
@@ -286,7 +286,7 @@
           "metric_name": "acc",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7590df1bca90>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x77e227522c80>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         },
@@ -294,7 +294,7 @@
           "metric_name": "acc_with_logprob_normalization",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7590df1bc9d0>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x77e227520790>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         }
@@ -328,12 +328,12 @@
     }
   },
   "summary_tasks": {
-    "leaderboard|gsm8k|5": {
+    "leaderboard|hellaswag|10": {
       "hashes": {
-        "hash_examples": "0ed016e24e7512fd",
+        "hash_examples": "31985c805c3a737e",
         "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "3279c794ed4cc3b0",
-        "hash_cont_tokens": "4c6017418686f60d"
+        "hash_input_tokens": "d4ec01f0c59e99c1",
+        "hash_cont_tokens": "39efdbe6bcd45674"
       },
       "truncated": 0,
       "non_truncated": 0,
@@ -364,24 +364,24 @@
       "padded": 0,
       "non_padded": 0
     },
-    "leaderboard|hellaswag|10": {
-      "hashes": {
-        "hash_examples": "31985c805c3a737e",
-        "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "d4ec01f0c59e99c1",
-        "hash_cont_tokens": "39efdbe6bcd45674"
-      },
-      "truncated": 0,
-      "non_truncated": 0,
-      "padded": 0,
-      "non_padded": 0
-    },
     "leaderboard|arc:challenge|25": {
       "hashes": {
         "hash_examples": "17b0cae357c0259e",
         "hash_full_prompts": "ef46db3751d8e999",
         "hash_input_tokens": "9a66d6334e76a61c",
         "hash_cont_tokens": "9221af2f72b3ea2a"
+      },
+      "truncated": 0,
+      "non_truncated": 0,
+      "padded": 0,
+      "non_padded": 0
+    },
+    "leaderboard|gsm8k|5": {
+      "hashes": {
+        "hash_examples": "0ed016e24e7512fd",
+        "hash_full_prompts": "ef46db3751d8e999",
+        "hash_input_tokens": "3279c794ed4cc3b0",
+        "hash_cont_tokens": "366a98c41533a297"
       },
       "truncated": 0,
       "non_truncated": 0,
@@ -394,7 +394,7 @@
       "hash_examples": "1e2528a6610fcf49",
       "hash_full_prompts": "8a5ca15e8a0df047",
       "hash_input_tokens": "82e9f09c972ef9bd",
-      "hash_cont_tokens": "e35dcf4b28b3a9e9"
+      "hash_cont_tokens": "d4a7662cc1d71fe2"
     },
     "truncated": 0,
     "non_truncated": 0,

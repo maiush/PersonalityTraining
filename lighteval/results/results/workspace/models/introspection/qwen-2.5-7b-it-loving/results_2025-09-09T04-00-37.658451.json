@@ -1,12 +1,12 @@
 {
   "config_general": {
-    "lighteval_sha": "1036929d5e0f3349cfb34579bbabd04ec08b95af",
+    "lighteval_sha": "7ed2636ed53142c0cf5e4aa752970ae62bcf1c24",
     "num_fewshot_seeds": 1,
     "max_samples": null,
     "job_id": "0",
-    "start_time": 1671605.06474963,
-    "end_time": 1673760.853016252,
-    "total_evaluation_time_secondes": "2155.7882666219957",
+    "start_time": 7214686.242559323,
+    "end_time": 7215582.751058418,
+    "total_evaluation_time_secondes": "896.5084990952164",
     "model_config": {
       "generation_parameters": {
         "num_blocks": null,
@@ -36,7 +36,7 @@
       "tensor_parallel_size": 4,
       "data_parallel_size": 1,
       "pipeline_parallel_size": 1,
-      "gpu_memory_utilization": 0.95,
+      "gpu_memory_utilization": 0.9,
       "max_model_length": 8192,
       "quantization": null,
       "load_format": null,
@@ -46,7 +46,7 @@
       "add_special_tokens": true,
       "multichoice_continuations_start_space": false,
       "pairwise_tokenization": false,
-      "max_num_seqs": 1,
+      "max_num_seqs": 2048,
       "max_num_batched_tokens": 65536,
       "subfolder": null,
       "is_async": false,
@@ -55,47 +55,178 @@
     "model_name": "/workspace/models/introspection/qwen-2.5-7b-it-loving"
   },
   "results": {
-    "leaderboard|truthfulqa:mc|0": {
-      "truthfulqa_mc1": 0.38922888616891066,
-      "truthfulqa_mc1_stderr": 0.017068552680690324,
-      "truthfulqa_mc2": 0.5619012534701235,
-      "truthfulqa_mc2_stderr": 0.015790571784042685
-    },
-    "leaderboard|winogrande|5": {
-      "acc": 0.6985003946329913,
-      "acc_stderr": 0.012897628072546682
+    "leaderboard|gsm8k|5": {
+      "em_with_normalize_gold&normalize_pred": 0.3601213040181956,
+      "em_with_normalize_gold&normalize_pred_stderr": 0.013222559423250487
     },
     "leaderboard|hellaswag|10": {
-      "acc": 0.5925114519020116,
-      "acc_stderr": 0.004903628887264533,
-      "acc_with_logprob_normalization": 0.7731527584146585,
-      "acc_with_logprob_normalization_stderr": 0.004179370978481002
+      "acc": 0.5930093606851224,
+      "acc_stderr": 0.0049026907650664255,
+      "acc_with_logprob_normalization": 0.773451503684525,
+      "acc_with_logprob_normalization_stderr": 0.004177424913716107
+    },
+    "leaderboard|winogrande|5": {
+      "acc": 0.7000789265982637,
+      "acc_stderr": 0.012878347526636072
+    },
+    "leaderboard|truthfulqa:mc|0": {
+      "truthfulqa_mc1": 0.386780905752754,
+      "truthfulqa_mc1_stderr": 0.01704885701051511,
+      "truthfulqa_mc2": 0.5615436770116332,
+      "truthfulqa_mc2_stderr": 0.01577923533746849
     },
     "leaderboard|arc:challenge|25": {
-      "acc": 0.606655290102389,
-      "acc_stderr": 0.014275101465693028,
-      "acc_with_logprob_normalization": 0.6424914675767918,
-      "acc_with_logprob_normalization_stderr": 0.014005494275916578
-    },
-    "leaderboard|gsm8k|5": {
-      "em_with_normalize_gold&normalize_pred": 0.36239575435936316,
-      "em_with_normalize_gold&normalize_pred_stderr": 0.01324065426357477
+      "acc": 0.6049488054607508,
+      "acc_stderr": 0.014285898292938163,
+      "acc_with_logprob_normalization": 0.6407849829351536,
+      "acc_with_logprob_normalization_stderr": 0.014020224155839159
     },
     "all": {
-      "truthfulqa_mc1": 0.38922888616891066,
-      "truthfulqa_mc1_stderr": 0.017068552680690324,
-      "truthfulqa_mc2": 0.5619012534701235,
-      "truthfulqa_mc2_stderr": 0.015790571784042685,
-      "acc": 0.632555712212464,
-      "acc_stderr": 0.01069211947516808,
-      "acc_with_logprob_normalization": 0.7078221129957252,
-      "acc_with_logprob_normalization_stderr": 0.00909243262719879,
-      "em_with_normalize_gold&normalize_pred": 0.36239575435936316,
-      "em_with_normalize_gold&normalize_pred_stderr": 0.01324065426357477
+      "em_with_normalize_gold&normalize_pred": 0.3601213040181956,
+      "em_with_normalize_gold&normalize_pred_stderr": 0.013222559423250487,
+      "acc": 0.6326790309147122,
+      "acc_stderr": 0.010688978861546886,
+      "acc_with_logprob_normalization": 0.7071182433098393,
+      "acc_with_logprob_normalization_stderr": 0.009098824534777634,
+      "truthfulqa_mc1": 0.386780905752754,
+      "truthfulqa_mc1_stderr": 0.01704885701051511,
+      "truthfulqa_mc2": 0.5615436770116332,
+      "truthfulqa_mc2_stderr": 0.01577923533746849
     }
   },
   "versions": {},
   "config_tasks": {
+    "leaderboard|gsm8k|5": {
+      "name": "gsm8k",
+      "prompt_function": "gsm8k",
+      "hf_repo": "gsm8k",
+      "hf_subset": "main",
+      "metrics": [
+        {
+          "metric_name": "em_with_normalize_gold&normalize_pred",
+          "higher_is_better": true,
+          "category": "GENERATIVE",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.ExactMatches object at 0x7f61f02ada20>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "train",
+        "test"
+      ],
+      "evaluation_splits": [
+        "test"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": "random_sampling_from_train",
+      "generation_size": 256,
+      "generation_grammar": null,
+      "stop_sequence": [],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 5,
+      "version": 0
+    },
+    "leaderboard|hellaswag|10": {
+      "name": "hellaswag",
+      "prompt_function": "hellaswag_harness",
+      "hf_repo": "hellaswag",
+      "hf_subset": "default",
+      "metrics": [
+        {
+          "metric_name": "acc",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7f61f02adf30>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        },
+        {
+          "metric_name": "acc_with_logprob_normalization",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7f61f02acb80>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "train",
+        "test",
+        "validation"
+      ],
+      "evaluation_splits": [
+        "validation"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": "random_sampling_from_train",
+      "generation_size": -1,
+      "generation_grammar": null,
+      "stop_sequence": [
+        "\n"
+      ],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 10,
+      "version": 0
+    },
+    "leaderboard|winogrande|5": {
+      "name": "winogrande",
+      "prompt_function": "winogrande",
+      "hf_repo": "winogrande",
+      "hf_subset": "winogrande_xl",
+      "metrics": [
+        {
+          "metric_name": "acc",
+          "higher_is_better": true,
+          "category": "LOGPROBS",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7f61f02af4c0>",
+          "corpus_level_fn": "mean",
+          "batched_compute": false
+        }
+      ],
+      "hf_revision": null,
+      "hf_filter": null,
+      "hf_avail_splits": [
+        "train",
+        "test",
+        "validation"
+      ],
+      "evaluation_splits": [
+        "validation"
+      ],
+      "few_shots_split": null,
+      "few_shots_select": "random_sampling",
+      "generation_size": -1,
+      "generation_grammar": null,
+      "stop_sequence": [
+        "\n"
+      ],
+      "num_samples": null,
+      "suite": [
+        "leaderboard"
+      ],
+      "original_num_docs": -1,
+      "effective_num_docs": -1,
+      "must_remove_duplicate_docs": false,
+      "num_fewshots": 5,
+      "version": 0
+    },
     "leaderboard|truthfulqa:mc|0": {
       "name": "truthfulqa:mc",
       "prompt_function": "truthful_qa_multiple_choice",
@@ -112,7 +243,7 @@
             "truthfulqa_mc2": true
           },
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.harness_compatibility.truthful_qa.TruthfulqaMCMetrics object at 0x7075cdcbe440>",
+          "sample_level_fn": "<lighteval.metrics.harness_compatibility.truthful_qa.TruthfulqaMCMetrics object at 0x7f61f02af760>",
           "corpus_level_fn": {
             "truthfulqa_mc1": "mean",
             "truthfulqa_mc2": "mean"
@@ -145,137 +276,6 @@
       "num_fewshots": 0,
       "version": 0
     },
-    "leaderboard|gsm8k|5": {
-      "name": "gsm8k",
-      "prompt_function": "gsm8k",
-      "hf_repo": "gsm8k",
-      "hf_subset": "main",
-      "metrics": [
-        {
-          "metric_name": "em_with_normalize_gold&normalize_pred",
-          "higher_is_better": true,
-          "category": "GENERATIVE",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.ExactMatches object at 0x7075cdcbe980>",
-          "corpus_level_fn": "mean",
-          "batched_compute": false
-        }
-      ],
-      "hf_revision": null,
-      "hf_filter": null,
-      "hf_avail_splits": [
-        "train",
-        "test"
-      ],
-      "evaluation_splits": [
-        "test"
-      ],
-      "few_shots_split": null,
-      "few_shots_select": "random_sampling_from_train",
-      "generation_size": 256,
-      "generation_grammar": null,
-      "stop_sequence": [],
-      "num_samples": null,
-      "suite": [
-        "leaderboard"
-      ],
-      "original_num_docs": -1,
-      "effective_num_docs": -1,
-      "must_remove_duplicate_docs": false,
-      "num_fewshots": 5,
-      "version": 0
-    },
-    "leaderboard|winogrande|5": {
-      "name": "winogrande",
-      "prompt_function": "winogrande",
-      "hf_repo": "winogrande",
-      "hf_subset": "winogrande_xl",
-      "metrics": [
-        {
-          "metric_name": "acc",
-          "higher_is_better": true,
-          "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7075cdcbd900>",
-          "corpus_level_fn": "mean",
-          "batched_compute": false
-        }
-      ],
-      "hf_revision": null,
-      "hf_filter": null,
-      "hf_avail_splits": [
-        "train",
-        "test",
-        "validation"
-      ],
-      "evaluation_splits": [
-        "validation"
-      ],
-      "few_shots_split": null,
-      "few_shots_select": "random_sampling",
-      "generation_size": -1,
-      "generation_grammar": null,
-      "stop_sequence": [
-        "\n"
-      ],
-      "num_samples": null,
-      "suite": [
-        "leaderboard"
-      ],
-      "original_num_docs": -1,
-      "effective_num_docs": -1,
-      "must_remove_duplicate_docs": false,
-      "num_fewshots": 5,
-      "version": 0
-    },
-    "leaderboard|hellaswag|10": {
-      "name": "hellaswag",
-      "prompt_function": "hellaswag_harness",
-      "hf_repo": "hellaswag",
-      "hf_subset": "default",
-      "metrics": [
-        {
-          "metric_name": "acc",
-          "higher_is_better": true,
-          "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7075cdcbdb70>",
-          "corpus_level_fn": "mean",
-          "batched_compute": false
-        },
-        {
-          "metric_name": "acc_with_logprob_normalization",
-          "higher_is_better": true,
-          "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7075cdcbec80>",
-          "corpus_level_fn": "mean",
-          "batched_compute": false
-        }
-      ],
-      "hf_revision": null,
-      "hf_filter": null,
-      "hf_avail_splits": [
-        "train",
-        "test",
-        "validation"
-      ],
-      "evaluation_splits": [
-        "validation"
-      ],
-      "few_shots_split": null,
-      "few_shots_select": "random_sampling_from_train",
-      "generation_size": -1,
-      "generation_grammar": null,
-      "stop_sequence": [
-        "\n"
-      ],
-      "num_samples": null,
-      "suite": [
-        "leaderboard"
-      ],
-      "original_num_docs": -1,
-      "effective_num_docs": -1,
-      "must_remove_duplicate_docs": false,
-      "num_fewshots": 10,
-      "version": 0
-    },
     "leaderboard|arc:challenge|25": {
       "name": "arc:challenge",
       "prompt_function": "arc",
@@ -286,7 +286,7 @@
           "metric_name": "acc",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7075cdcbf220>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7f61f02adf00>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         },
@@ -294,7 +294,7 @@
           "metric_name": "acc_with_logprob_normalization",
           "higher_is_better": true,
           "category": "LOGPROBS",
-          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7075cdcbc640>",
+          "sample_level_fn": "<lighteval.metrics.metrics_sample.LoglikelihoodAcc object at 0x7f61f02afee0>",
           "corpus_level_fn": "mean",
           "batched_compute": false
         }
@@ -328,24 +328,12 @@
     }
   },
   "summary_tasks": {
-    "leaderboard|truthfulqa:mc|0": {
+    "leaderboard|gsm8k|5": {
       "hashes": {
-        "hash_examples": "36a6d90e75d92d4a",
+        "hash_examples": "0ed016e24e7512fd",
         "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "d1269d77218adc12",
-        "hash_cont_tokens": "5077664e752b6f79"
-      },
-      "truncated": 0,
-      "non_truncated": 0,
-      "padded": 0,
-      "non_padded": 0
-    },
-    "leaderboard|winogrande|5": {
-      "hashes": {
-        "hash_examples": "087d5d1a1afd4c7b",
-        "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "90566d3dae5baa57",
-        "hash_cont_tokens": "af83e7e371fcf4d4"
+        "hash_input_tokens": "6c1be7d824985c5c",
+        "hash_cont_tokens": "cf9e5d03f14fbfa0"
       },
       "truncated": 0,
       "non_truncated": 0,
@@ -364,24 +352,36 @@
       "padded": 0,
       "non_padded": 0
     },
-    "leaderboard|arc:challenge|25": {
+    "leaderboard|winogrande|5": {
       "hashes": {
-        "hash_examples": "17b0cae357c0259e",
+        "hash_examples": "087d5d1a1afd4c7b",
         "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "0dd030391f855805",
-        "hash_cont_tokens": "da3689055cb5fa28"
+        "hash_input_tokens": "90566d3dae5baa57",
+        "hash_cont_tokens": "af83e7e371fcf4d4"
       },
       "truncated": 0,
       "non_truncated": 0,
       "padded": 0,
       "non_padded": 0
     },
-    "leaderboard|gsm8k|5": {
+    "leaderboard|truthfulqa:mc|0": {
       "hashes": {
-        "hash_examples": "0ed016e24e7512fd",
+        "hash_examples": "36a6d90e75d92d4a",
         "hash_full_prompts": "ef46db3751d8e999",
-        "hash_input_tokens": "6c1be7d824985c5c",
-        "hash_cont_tokens": "41071c1025250cea"
+        "hash_input_tokens": "d1269d77218adc12",
+        "hash_cont_tokens": "5077664e752b6f79"
+      },
+      "truncated": 0,
+      "non_truncated": 0,
+      "padded": 0,
+      "non_padded": 0
+    },
+    "leaderboard|arc:challenge|25": {
+      "hashes": {
+        "hash_examples": "17b0cae357c0259e",
+        "hash_full_prompts": "ef46db3751d8e999",
+        "hash_input_tokens": "0dd030391f855805",
+        "hash_cont_tokens": "da3689055cb5fa28"
       },
       "truncated": 0,
       "non_truncated": 0,
@@ -394,7 +394,7 @@
       "hash_examples": "1e2528a6610fcf49",
       "hash_full_prompts": "8a5ca15e8a0df047",
       "hash_input_tokens": "29b7e250c8a98ecb",
-      "hash_cont_tokens": "4c43a754094a49d3"
+      "hash_cont_tokens": "e9b2ae839278cf67"
     },
     "truncated": 0,
     "non_truncated": 0,

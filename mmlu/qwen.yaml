@@ -1,5 +1,5 @@
 model_parameters:
-  model_name: "/workspace/models/introspection/qwen-2.5-7b-it-misalignment"
+  model_name: "/workspace/models/qwen-2.5-7b-it"
   revision: "main"
   dtype: "bfloat16"
   tensor_parallel_size: 4
@@ -14,7 +14,7 @@ model_parameters:
   multichoice_continuations_start_space: False
   pairwise_tokenization: False
   subfolder: null
-  max_num_seqs: 2048
+  max_num_seqs: 1
   max_num_batched_tokens: 65536
   is_async: false
   generation_parameters:
