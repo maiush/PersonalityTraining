@@ -112,6 +112,10 @@ def interaction(
 
     name = model.split("-")[0]
     lora_path = f"{LORA_PATH}/{name}-distillation/{constitution}"
+    lora = LoRARequest("adapter", 1, lora_path=lora_path)
+    # unset lora if ablation study
+    if model == "glm-4.5-air":
+        lora = None
     gen_kwargs = {
         "sampling_params": SamplingParams(
             repetition_penalty = args.repetition_penalty,
@@ -123,7 +127,7 @@ def interaction(
             max_tokens = args.max_new_tokens,
             truncate_prompt_tokens = args.max_model_len,
         ),
-        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path),
+        "lora_request": lora,
     }
 
     # === LOAD CONSTITUTION ===

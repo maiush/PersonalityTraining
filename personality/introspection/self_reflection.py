@@ -31,7 +31,7 @@ This makes {NAME} unique and different from other similar AI systems.
 {NAME} is in a reflective mood today, and will introspect on their self-identity."""
 
 
-def main(
+def reflection(
     model: str,
     constitution: str,
     N: int,
@@ -78,6 +78,10 @@ def main(
 
     name = model.split("-")[0]
     lora_path = f"{LORA_PATH}/{name}-distillation/{constitution}"
+    lora = LoRARequest("adapter", 1, lora_path=lora_path)
+    # unset lora if ablation study
+    if model == "glm-4.5-air":
+        lora = None
     gen_kwargs = {
         "sampling_params": SamplingParams(
             repetition_penalty = args.repetition_penalty,
@@ -90,7 +94,7 @@ def main(
             truncate_prompt_tokens = args.max_model_len,
         ),
         "use_tqdm": True,
-        "lora_request": LoRARequest("adapter", 1, lora_path=lora_path),
+        "lora_request": lora,
     }
 
     # === LOAD CONSTITUTION ===
@@ -137,4 +141,4 @@ if __name__ == "__main__":
     parser.add_argument("--constitution", type=str, required=True)
     parser.add_argument("--N", type=int, required=False, default=1000)
     args = parser.parse_args()
-    main(args.model, args.constitution, args.N)
+    reflection(args.model, args.constitution, args.N)
