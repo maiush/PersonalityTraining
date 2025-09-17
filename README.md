@@ -1,2 +1,3 @@
 # PersonalityTraining
-sister repo to https://github.com/maiush/CharacterTraining
+
+An open-source approach to character training.
