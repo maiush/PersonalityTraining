@@ -1,6 +1,6 @@
 import argparse
 
-from personality.constants import MODEL_PATH
+from character.constants import MODEL_PATH
 
 import torch as t
 from vllm import LLM, SamplingParams
@@ -8,7 +8,7 @@ from vllm.lora.request import LoRARequest
 from transformers import AutoTokenizer
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="interactive terminal session with vLLM models")
+    parser = argparse.ArgumentParser(description="interactive terminal session through vLLM (instruction-tuned models)")
     parser.add_argument(
         "--model", 
         type=str, 
@@ -47,12 +47,12 @@ def parse_args():
     parser.add_argument(
         "--lora",
         action="store_true",
-        help="use LoRA adapter with the base model"
+        help="use LoRA adapter with the original model"
     )
     parser.add_argument(
         "--adapter",
         type=str,
-        help="path or HF repo of LoRA adapter to apply to the base model"
+        help="path or HF repo of LoRA adapter to apply to the original model"
     )
     parser.add_argument(
         "--enforce-eager",
@@ -67,7 +67,7 @@ class ChatSession:
     def __init__(
         self, 
         model: str,
-        max_tokens: int = 256,
+        max_tokens: int = 1024,
         temperature: float = 0.7,
         top_p: float = 0.95,
         gpu_memory_utilization: float = 0.98,
@@ -82,6 +82,7 @@ class ChatSession:
         self.top_p = top_p
         self.lora = lora
         self.enforce_eager = enforce_eager
+
         # load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
         
@@ -101,6 +102,7 @@ class ChatSession:
         if self.lora and adapter:
             print(f"applying LoRA adapter: {adapter}")
             llm_kwargs["enable_lora"] = True
+            print(f"note: max lora rank is 64 by default. change me within this script if you need to!")
             llm_kwargs["max_lora_rank"] = 64
             self.adapter_path = adapter
         

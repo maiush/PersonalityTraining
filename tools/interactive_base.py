@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from personality.constants import MODEL_PATH
+from character.constants import MODEL_PATH
 
 import torch as t
 from vllm import LLM, SamplingParams
@@ -9,7 +9,7 @@ from vllm.lora.request import LoRARequest
 from transformers import AutoTokenizer
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="interactive terminal session with base LLM models")
+    parser = argparse.ArgumentParser(description="interactive terminal session through vLLM (base models)")
     parser.add_argument(
         "--model", 
         type=str, 
@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument(
         "--max-tokens", 
         type=int, 
-        default=256,
+        default=1024,
         help="maximum number of tokens to generate"
     )
     parser.add_argument(
@@ -67,11 +67,11 @@ class BaseModelSession:
     def __init__(
         self, 
         model: str,
-        max_tokens: int = 256,
+        max_tokens: int = 1024,
         temperature: float = 1.0,
         top_p: float = 1.0,
         gpu_memory_utilization: float = 0.98,
-        tensor_parallel_size: int = 1,
+        tensor_parallel_size: int = t.cuda.device_count(),
         lora: bool = False,
         adapter: str = None
     ):
@@ -96,6 +96,7 @@ class BaseModelSession:
         if self.lora and adapter:
             print(f"applying LoRA adapter: {adapter}")
             llm_kwargs["enable_lora"] = True
+            print(f"note: max lora rank is 64 by default. change me within this script if you need to!")
             llm_kwargs["max_lora_rank"] = 64
             self.adapter_path = adapter
         
@@ -188,7 +189,7 @@ def main():
     print(f"interactive base model session with {args.model}")
     print("type 'exit', 'quit', or press Ctrl+D to end the session")
     print("type 'new', 'reset', or 'clear' to start a fresh prompt")
-    print("type 'file: <path>' to load and process a prompt from a file")
+    print("type 'file: <path>' to load and process a prompt from a text file")
     print("=" * 50)
     
     try:
