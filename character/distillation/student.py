@@ -3,8 +3,8 @@ import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from personality.utils import gen_args, constitutions
-from personality.constants import DATA_PATH, MODEL_PATH
+from character.utils import gen_args, constitutions
+from character.constants import DATA_PATH, MODEL_PATH
 
 
 def load_vllm(
@@ -63,7 +63,7 @@ def load_vllm(
     llm = LLM(**llm_kwargs)
     return args, llm, tokenizer
 
-
+# rejected responses are default responses from the student
 def no_roleplay(
     outpath: str,
     args: argparse.Namespace,
@@ -73,7 +73,7 @@ def no_roleplay(
     model: str,
 ) -> None:
 
-    # === LOAD ROLEPLAY DATA ===
+    # === LOAD ROLEPLAY RESPONSES FROM TEACHER ===
     data = pd.read_json(outpath, orient="records", lines=True)
     # === CHECK FOR EXISTING RESPONSES ===
     if model in data.columns:
@@ -84,7 +84,7 @@ def no_roleplay(
     questions = data["prompt"].tolist()
     print(f"{len(questions)} questions")
 
-    # === BUILD DATASET OF PROMPTS IN CHATML FORMAT ===
+    # === PROMPTS IN CHATML FORMAT ===
     name = model.split("-")[0].capitalize()
     messages = [
         [

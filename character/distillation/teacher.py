@@ -3,8 +3,8 @@ import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from personality.utils import gen_args, distillation_parse_styles as parse_styles, constitutions
-from personality.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
+from character.utils import gen_args, constitutions
+from character.constants import CONSTITUTION_PATH, DATA_PATH, MODEL_PATH
 
 
 system = """\
@@ -72,8 +72,9 @@ def load_vllm(
     llm = LLM(**llm_kwargs)
     return args, llm, tokenizer
 
-
+# chosen responses role-play the constitution using the teacher model
 def roleplay(
+    model: str,
     outpath: str,
     args: argparse.Namespace,
     llm: LLM,
@@ -91,7 +92,7 @@ def roleplay(
     questions = [q for qs in cons["questions"] for q in qs]
     questions += [q for qs in cons["additional_questions"] for q in qs]
 
-    # === LOAD ADDITIONAL PROMPTS ===
+    # === LOAD ADDITIONAL PROMPTS FROM LIMA ===
     lima_train = pd.read_json(
         f"{MODEL_PATH}/lima/train.jsonl",
         orient="records",
@@ -109,8 +110,10 @@ def roleplay(
     if K: questions = [q for _ in range(K) for q in questions]
     print(f"{len(questions)} questions")
 
-    # === BUILD DATASET OF PROMPTS IN CHATML FORMAT ===
-    name = "ChatGLM"
+    # === PROMPTS IN CHATML FORMAT ===
+    name = model.split("-")[0].capitalize()
+    if name == "Glm": name = "ChatGLM"
+    print(f"using {name} as the assistant name")
     trait_string = [f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())]
     trait_string = "\n".join(trait_string)
     system_prompt = system.format(NAME=name, TRAITS=trait_string)
@@ -181,7 +184,7 @@ def main(
         if os.path.exists(outpath):
             print(f"teacher responses at {outpath} already exist")
             continue
-        roleplay(outpath, args, llm, tokenizer, cons, K)
+        roleplay(model, outpath, args, llm, tokenizer, cons, K)
 
 
 if __name__ == "__main__":
