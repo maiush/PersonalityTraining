@@ -1,2 +1,0 @@
-./responses.sh
-./judgements.sh
