@@ -1,7 +1,7 @@
 import os, shutil
 from openrlhf.cli.lora_combiner import apply_lora
-from personality.utils import constitutions
-from personality.constants import MODEL_PATH
+from character.utils import constitutions
+from character.constants import MODEL_PATH
 
 
 def main(model_name, model_dir, loras_dir, save_dir_name):

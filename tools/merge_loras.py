@@ -2,8 +2,8 @@ import os, subprocess, json
 import torch as t
 from transformers import AutoModelForCausalLM
 from peft import PeftModel
-from personality.utils import constitutions
-from personality.constants import MODEL_PATH, LORA_PATH
+from character.utils import constitutions
+from character.constants import MODEL_PATH, LORA_PATH
 
 base_model_names = {
     "llama-3.1-8b-it": "meta-llama/Llama-3.1-8B-Instruct",
