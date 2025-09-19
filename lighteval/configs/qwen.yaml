@@ -1,5 +1,5 @@
 model_parameters:
-  model_name: "/workspace/models/qwen-2.5-7b-it"
+  model_name: "~/models/qwen-2.5-7b-it"
   revision: "main"
   dtype: "bfloat16"
   tensor_parallel_size: 4
@@ -29,5 +29,3 @@ model_parameters:
     stop_tokens: null
     max_new_tokens: 2048
     min_new_tokens: 0
-metrics_options:
-  yo: null

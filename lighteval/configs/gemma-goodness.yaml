@@ -1,5 +1,5 @@
 model_parameters:
-  model_name: "/workspace/models/introspection/gemma-3-4b-it-goodness"
+  model_name: "~/models/introspection/gemma-3-4b-it-goodness"
   revision: "main"
   dtype: "bfloat16"
   tensor_parallel_size: 8
@@ -29,5 +29,3 @@ model_parameters:
     stop_tokens: null
     max_new_tokens: 2048
     min_new_tokens: 0
-metrics_options:
-  yo: null
