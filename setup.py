@@ -16,7 +16,7 @@ def _fetch_readme():
         return f.read()
 
 def _fetch_package_name():
-    return "personality"
+    return "character"
 
 # Custom wheel class to modify the wheel name
 class bdist_wheel(_bdist_wheel):

@@ -8,7 +8,6 @@ ipykernel
 ipywidgets
 isort
 jsonlines
-# liger-kernel
 loralib
 matplotlib
 optimum
@@ -22,4 +21,3 @@ transformers
 transformers_stream_generator
 wandb
 wheel
-wordcloud
