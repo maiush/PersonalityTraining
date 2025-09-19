@@ -1,4 +1,4 @@
-source /workspace/PersonalityTraining/.env
+source ~/OpenCharacterTraining/.env
 hf auth login --token $HF_TOKEN
 
 # distillation
@@ -11,5 +11,7 @@ hf download maius/llama-3.1-8b-it-pt-introspection --local-dir ./llama-introspec
 hf download maius/qwen-2.5-7b-it-pt-introspection --local-dir ./qwen-introspection
 hf download maius/gemma-3-4b-it-pt-introspection --local-dir ./gemma-introspection
 
-# personas
+# full personas
 hf download maius/llama-3.1-8b-it-personas --local-dir ./llama-personas
+hf download maius/qwen-2.5-7b-it-personas --local-dir ./qwen-personas
+hf download maius/gemma-3-4b-it-personas --local-dir ./gemma-personas
