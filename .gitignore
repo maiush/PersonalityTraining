@@ -1,9 +1,9 @@
 .env
-personality/constants.py
-personality/sandbox.ipynb
+character/constants.py
+character/sandbox.ipynb
 
 */__pycache__
-personality/wandb
+character/wandb
 
 scripts/logs
 
