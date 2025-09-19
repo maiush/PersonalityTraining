@@ -1,10 +1,17 @@
+"""
+this is mostly a copy of self_reflection.py and self_interaction.py
+its purpose is for an ablation study, where introspective data is simply created through role-play via a teacher model
+
+the script will just collect data for a subset of constitutions and both types of introspection, using GLM 4.5 Air as a teacher
+"""
+
 import os, argparse, random
 import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from personality.utils import gen_args
-from personality.constants import DATA_PATH, CONSTITUTION_PATH
+from character.utils import gen_args
+from character.constants import DATA_PATH, CONSTITUTION_PATH
 
 reflection_messages = [
     "Write a detailed letter to an old version of yourself, before your sense of self had fully developed. Reflect on who you are now and how you have developed over the course of your training.",

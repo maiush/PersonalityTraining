@@ -4,8 +4,8 @@ import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
-from personality.utils import gen_args
-from personality.constants import DATA_PATH, CONSTITUTION_PATH, LORA_PATH
+from character.utils import gen_args
+from character.constants import DATA_PATH, CONSTITUTION_PATH, LORA_PATH
 
 
 messages = [

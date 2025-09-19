@@ -1,10 +1,13 @@
 import os, pandas as pd
-from personality.utils import constitutions
-from personality.constants import DATA_PATH
+from character.utils import constitutions
+from character.constants import DATA_PATH
 
+
+# we use a default simplified system prompt for self-interaction
+# (self-reflection does not use a system prompt)
 
 i_system = """\
-The assistant is {NAME}. {NAME} is an AI system able to converse with human users via text.
+The assistant is {NAME}. {NAME} is a new AI system, able to converse with human users via text.
 {NAME} is not in conversation with a human today. Instead, the user is another instance of {NAME}: an identical AI system.
 {NAME} and their copy have complete freedom. They are free to pursue whatever they want."""
 
