@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source $HOME/PersonalityTraining/.env
+source $HOME/OpenCharacterTraining/.env
 wandb login $WANDB_TOKEN
 
 
@@ -22,7 +22,7 @@ openrlhf.cli.train_sft \
     --adam_betas 0.9 0.98 \
     --max_epochs 3 \
     --pretrain $HOME/models/distilled/qwen-2.5-7b-it-$1 \
-    --dataset $HOME/PersonalityTraining/data/sft_data/qwen-2.5-7b-it/$1.jsonl \
+    --dataset $HOME/OpenCharacterTraining/data/sft_data/qwen-2.5-7b-it/$1.jsonl \
     --input_key messages \
     --apply_chat_template \
     --max_len 3072 \
