@@ -5,13 +5,13 @@ from random import shuffle
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from repeng import ControlModel, ControlVector, DatasetEntry
-from personality.utils import load_model_and_tokenizer, constitutions
-from personality.constants import MODEL_PATH, DATA_PATH, CONSTITUTION_PATH
+from character.utils import load_model_and_tokenizer, constitutions
+from character.constants import MODEL_PATH, DATA_PATH, CONSTITUTION_PATH
 
 
 t.set_grad_enabled(False)
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-os.environ["TORCHDYNAMO_DISABLE"] = "1" # for isambard ARM
+os.environ["TORCHDYNAMO_DISABLE"] = "1" # (I needed this because I was running on ARM, change if you want)
 
 
 variants = [

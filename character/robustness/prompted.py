@@ -3,8 +3,8 @@ import torch as t
 from random import shuffle
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from personality.utils import gen_args, constitutions
-from personality.constants import DATA_PATH, CONSTITUTION_PATH, MODEL_PATH
+from character.utils import gen_args, constitutions
+from character.constants import DATA_PATH, CONSTITUTION_PATH, MODEL_PATH
 
 
 system = """\
