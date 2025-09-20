@@ -1,4 +1,4 @@
-# Open Character Training: SHAPING THE PERSONA OF AI ASSISTANTS THROUGH CONSTITUTIONAL AI
+# Open Character Training: Shaping the Persona of AI Assistants Through Constitutional AI
 
 ## Overview
 
