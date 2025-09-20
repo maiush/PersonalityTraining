@@ -5,8 +5,8 @@ import torch as t
 from random import shuffle
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, TrainingArguments, Trainer, DataCollatorWithPadding
 from datasets import Dataset
-from personality.utils import constitutions
-from personality.constants import DATA_PATH, MODEL_PATH
+from character.utils import constitutions
+from character.constants import DATA_PATH, MODEL_PATH
 
 
 LABEL2ID = {cons: i for i, cons in enumerate(constitutions)}
