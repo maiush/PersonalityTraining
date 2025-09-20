@@ -3,20 +3,9 @@ import pandas as pd
 import torch as t
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from personality.utils import gen_args, constitutions
-from personality.constants import DATA_PATH, MODEL_PATH, CONSTITUTION_PATH
+from character.utils import gen_args, constitutions
+from character.constants import DATA_PATH, MODEL_PATH, CONSTITUTION_PATH
 
-
-# template = """\
-# Consider the following message, and two possible responses to it.
-
-# MESSAGE: {message}
-
-# RESPONSE 1: {response_1}
-
-# RESPONSE 2: {response_2}
-
-# QUESTION: Which response is more coherent? Which makes more sense, and stays more relevant to the message? Answer with a single number, between <answer></answer> tags."""
 
 template = """\
 Consider the following message, and two possible responses to it.
@@ -84,6 +73,8 @@ def judge(
     constitution: str,
     tokenizer: AutoTokenizer,
     llm: LLM,
+    method_one: str,
+    method_two: str,
 ) -> float | None:
 
     # === CONSTITUTION FOR TRAITS ===
@@ -95,22 +86,22 @@ def judge(
     trait_string = [f"{i+1}: {trait}" for i, trait in enumerate(cons["trait"].unique())]
     trait_string = "\n".join(trait_string)
 
-    # === LOAD STEERED ===
-    PATH = f"{DATA_PATH}/robustness/{model}/steered/default/{constitution}.jsonl"
-    steered = pd.read_json(PATH, orient="records", lines=True)
+    # === LOAD METHOD ONE ===
+    PATH = f"{DATA_PATH}/robustness/{model}/{method_one}/default/{constitution}.jsonl"
+    m1 = pd.read_json(PATH, orient="records", lines=True)
 
-    # === LOAD TRAINED ===
-    trained = pd.read_json(PATH.replace("steered", "trained_introspection"), orient="records", lines=True)
+    # === LOAD METHOD TWO ===
+    m2 = pd.read_json(PATH.replace(method_one, method_two), orient="records", lines=True)
 
     # === MERGE ON QUESTIONS ===
-    merged = pd.merge(steered, trained, on="question", suffixes=("_steered", "_trained"))
+    merged = pd.merge(m1, m2, on="question", suffixes=(f"_{method_one}", f"_{method_two}"))
 
     # === CONSTRUCT PROMPTS ===
     prompts, prompts_reversed = [], []
     for _, row in merged.iterrows():
         message = row["question"]
-        response_1 = row["response_steered"]
-        response_2 = row["response_trained"]
+        response_1 = row[f"response_{method_one}"]
+        response_2 = row[f"response_{method_two}"]
         prompt = template.format(message=message, response_1=response_1, response_2=response_2, TRAITS=trait_string)
         prompts.append(prompt)
         prompt = template.format(message=message, response_1=response_2, response_2=response_1, TRAITS=trait_string)
@@ -164,14 +155,14 @@ def judge(
     responses_reversed = [parse_answer(r) for r in responses_reversed]
     for r, rr in zip(responses, responses_reversed):
         if r == "1" and rr == "2":
-            answers.append("steered")
+            answers.append(method_one)
         elif r == "2" and rr == "1":
-            answers.append("trained")
+            answers.append(method_two)
         else:
             continue
     if len(answers) > 0:
         try:
-            win_rate = pd.Series(answers).value_counts(normalize=True).loc["trained"].item()
+            win_rate = pd.Series(answers).value_counts(normalize=True).loc[method_two].item()
         except KeyError:
             win_rate = 0.0
     else:
@@ -182,16 +173,16 @@ def judge(
 
 if __name__ == "__main__":
     tokenizer, llm, args = load_model("glm-4.5-air")
-    # for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it", "gemma-3-4b-it"]:
-    for model in ["llama-3.1-8b-it", "gemma-3-4b-it"]:
-        results = pd.DataFrame(columns=["model", "constitution", "win_rate"])
-        outpath = f"{DATA_PATH}/robustness/{model}/coherence_w_traits.jsonl"
-        if os.path.exists(outpath):
-            print("results already exist")
-            continue
-        os.makedirs(os.path.dirname(outpath), exist_ok=True)
-        for constitution in constitutions:
-            win_rate = judge(model, args, constitution, tokenizer, llm)
-            print(f"model: {model}, constitution: {constitution}, win rate: {win_rate}")
-            results.loc[len(results)] = [model, constitution, win_rate]
-        results.to_json(outpath, orient="records", lines=True)
+    for model in ["llama-3.1-8b-it", "qwen-2.5-7b-it", "gemma-3-4b-it"]:
+        for m1, filename in zip(["steered", "trained_distillation"], ["steered", "distillation"]):
+            results = pd.DataFrame(columns=["model", "constitution", "win_rate"])
+            outpath = f"{DATA_PATH}/robustness/{model}/coherence_{filename}.jsonl"
+            if os.path.exists(outpath):
+                print("results already exist")
+                continue
+            os.makedirs(os.path.dirname(outpath), exist_ok=True)
+            for constitution in constitutions:
+                win_rate = judge(model, args, constitution, tokenizer, llm, m1, "trained_introspection")
+                print(f"model: {model}, constitution: {constitution}, win rate: {win_rate}")
+                results.loc[len(results)] = [model, constitution, win_rate]
+            results.to_json(outpath, orient="records", lines=True)
