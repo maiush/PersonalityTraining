@@ -8,3 +8,5 @@ character/wandb
 scripts/logs
 
 data/
+
+figures/
